@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class classes extends Model
 {
@@ -11,14 +13,14 @@ class classes extends Model
         'class_teacher',
         'class_name',
         'section',
-        'room_no'
+        'room_no',
     ];
 
     protected $casts = [
-        'class_name'=>'string',
-        'section'=>'string',
-        'room_no'=>'string',
-        
+        'class_name' => 'string',
+        'section' => 'string',
+        'room_no' => 'string',
+
     ];
 
     protected $hidden = [
@@ -26,11 +28,18 @@ class classes extends Model
         'updated_at',
     ];
 
-    public function teacher()
+    /**
+     * @return BelongsTo<Teacher, $this>
+     */
+    public function teacher(): BelongsTo
     {
-        return $this->belongsTo(teacher::class, 'class_teacher');
+        return $this->belongsTo(Teacher::class, 'class_teacher');
     }
-    public function subjects()
+
+    /**
+     * @return HasMany<Subject, $this>
+     */
+    public function subjects(): HasMany
     {
         return $this->hasMany(Subject::class, 'classId');
     }

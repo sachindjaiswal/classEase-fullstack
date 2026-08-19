@@ -4,47 +4,45 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ClassesResource;
 use App\Models\classes;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ClassesController extends Controller
 {
     // GET classes
-    public function getAllClasses()
+    public function getAllClasses(): JsonResponse
     {
         $classes = classes::with('teacher')->get();
 
         return response()->json([
             'message' => 'Classes retrieved successfully',
-            'classes' => ClassesResource::collection($classes)
+            'classes' => ClassesResource::collection($classes),
         ], 200);
-    //     return Inertia::render('getClasses', [
-    // 'classes' => $classes,
+        //     return Inertia::render('getClasses', [
+        // 'classes' => $classes,
 
-    
     }
 
-
     // GET /classes/{id}
-    public function getClass($id)
+    public function getClass(int $id): JsonResponse
     {
         $class = classes::with('teacher')->find($id);
 
-        if (!$class) {
+        if (! $class) {
             return response()->json([
-                'message' => 'Class not found'
+                'message' => 'Class not found',
             ], 404);
         }
 
         return response()->json([
             'message' => 'Class retrieved successfully',
-            'class' => $class
+            'class' => $class,
         ], 200);
     }
 
-
     // POST /classes
-    public function createClass(Request $request)
+    public function createClass(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'class_teacher' => 'nullable|exists:teachers,id',
@@ -57,19 +55,18 @@ class ClassesController extends Controller
 
         return response()->json([
             'message' => 'Class created successfully',
-            'class' => $class
+            'class' => $class,
         ], 201);
     }
 
-
     // PUT /classes/{id}
-    public function updateClass(Request $request, $id)
+    public function updateClass(Request $request, int $id): JsonResponse
     {
         $class = classes::find($id);
 
-        if (!$class) {
+        if (! $class) {
             return response()->json([
-                'message' => 'Class not found'
+                'message' => 'Class not found',
             ], 404);
         }
 
@@ -84,26 +81,25 @@ class ClassesController extends Controller
 
         return response()->json([
             'message' => 'Class updated successfully',
-            'class' => $class
+            'class' => $class,
         ], 200);
     }
 
-
     // DELETE /classes/{id}
-    public function deleteClass($id)
+    public function deleteClass(int $id): JsonResponse
     {
         $class = classes::find($id);
 
-        if (!$class) {
+        if (! $class) {
             return response()->json([
-                'message' => 'Class not found'
+                'message' => 'Class not found',
             ], 404);
         }
 
         $class->delete();
 
         return response()->json([
-            'message' => 'Class deleted successfully'
+            'message' => 'Class deleted successfully',
         ], 200);
     }
 }

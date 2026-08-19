@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Teacher extends Model
@@ -11,6 +13,7 @@ class Teacher extends Model
 
     protected $fillable = [
         'user_id',
+        'email',
         'first_name',
         'middle_name',
         'surname',
@@ -27,23 +30,34 @@ class Teacher extends Model
     ];
 
     protected $casts = [
-        "first_name"=> "string" ,
-        "middle_name" => "string",
-        "surname" => "string",
-        "contact" => "string",
-        "designation" =>  "string",
-        "monthly_salary" => "integer"
+        'first_name' => 'string',
+        'middle_name' => 'string',
+        'surname' => 'string',
+        'contact' => 'string',
+        'designation' => 'string',
+        'monthly_salary' => 'integer',
     ];
-    public function user()
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function classes()
+    /**
+     * @return HasMany<classes, $this>
+     */
+    public function classes(): HasMany
     {
         return $this->hasMany(classes::class, 'class_teacher');
     }
-    public function subjects()
+
+    /**
+     * @return HasMany<Subject, $this>
+     */
+    public function subjects(): HasMany
     {
         return $this->hasMany(Subject::class, 'teacherId');
     }

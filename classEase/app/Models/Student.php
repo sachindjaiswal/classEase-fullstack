@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Student extends Model
@@ -15,6 +16,8 @@ class Student extends Model
         'firstName',
         'middleName',
         'surname',
+        'email',
+        'password',
         'contact',
         'parentContact',
         'address',
@@ -26,21 +29,28 @@ class Student extends Model
         'updated_at',
         'deleted_at',
     ];
+
     protected $casts = [
         'firstName' => 'string',
         'middleName' => 'string',
-        'surname' =>  'string',
+        'surname' => 'string',
         'contact' => 'string',
         'parentContact' => 'string',
-        'address'=> 'string'
+        'address' => 'string',
     ];
 
-    public function user()
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function class()
+    /**
+     * @return BelongsTo<classes, $this>
+     */
+    public function class(): BelongsTo
     {
         return $this->belongsTo(classes::class, 'classId');
     }

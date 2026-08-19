@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-base text-ink2 font-body antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  @apply font-display;
+}
+
+/* numeric/data values (attendance %, scores, roll numbers, currency) */
+.data-figure {
+  @apply font-mono tabular-nums;
+}
+
+/* visible focus ring everywhere — accessibility floor, not optional */
+:focus-visible {
+  outline: 2px solid #c89b3c;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

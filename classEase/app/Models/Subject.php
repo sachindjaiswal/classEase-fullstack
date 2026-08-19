@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Subject extends Model
 {
@@ -11,6 +12,7 @@ class Subject extends Model
         'subjectName',
         'teacherId',
     ];
+
     protected $hidden = [
         'user_id',
         'created_at',
@@ -18,12 +20,18 @@ class Subject extends Model
         'deleted_at',
     ];
 
-    public function class()
+    /**
+     * @return BelongsTo<classes, $this>
+     */
+    public function class(): BelongsTo
     {
         return $this->belongsTo(classes::class, 'classId');
     }
 
-    public function teacher()
+    /**
+     * @return BelongsTo<Teacher, $this>
+     */
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(Teacher::class, 'teacherId');
     }

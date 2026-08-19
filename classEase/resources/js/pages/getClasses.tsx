@@ -35,9 +35,7 @@ export default function GetClasses({ classes }: Props) {
                     <p>Name: {classItem.class_teacher.name}</p>
                     <p>Email: {classItem.class_teacher.email}</p>
                     <p>Contact: {classItem.class_teacher.contact}</p>
-                    <p>
-                        Designation: {classItem.class_teacher.designation}
-                    </p>
+                    <p>Designation: {classItem.class_teacher.designation}</p>
                 </div>
             ))}
         </div>

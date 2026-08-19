@@ -18,10 +18,10 @@ return new class extends Migration
             $table->string('subjectName');
 
             $table->foreignId('teacherId')
-                    ->nullable()
-                    ->constrained('teachers')
-                    ->nullOnDelete();
-                    
+                ->nullable()
+                ->constrained('teachers')
+                ->nullOnDelete();
+
             $table->timestamps();
         });
     }

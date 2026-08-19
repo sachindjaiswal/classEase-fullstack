@@ -1,7 +1,11 @@
 <?php
 
-test('returns a successful response', function () {
-    $response = $this->get(route('home'));
+test('login requires credentials', function () {
+    $this->postJson('/api/login')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['email', 'password']);
+});
 
-    $response->assertOk();
+test('health check responds', function () {
+    $this->get('/up')->assertOk();
 });

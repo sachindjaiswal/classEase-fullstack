@@ -2,25 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\teacher as ModelsTeacher;
+use App\Models\Teacher;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class TeacherController extends Controller
 {
     // Get all teachers
-    public function getAllTeachers()
+    public function getAllTeachers(): JsonResponse
     {
-        return response()->json(ModelsTeacher::all(), 200);
+        return response()->json(Teacher::all(), 200);
     }
 
     // Get one teacher
-    public function getTeacher($id)
+    public function getTeacher(int $id): JsonResponse
     {
-        $teacher = ModelsTeacher::find($id);
+        $teacher = Teacher::find($id);
 
-        if (!$teacher) {
+        if (! $teacher) {
             return response()->json([
-                'message' => 'Teacher not found'
+                'message' => 'Teacher not found',
             ], 404);
         }
 
@@ -28,7 +29,7 @@ class TeacherController extends Controller
     }
 
     // Add teacher
-    public function createTeacher(Request $request)
+    public function createTeacher(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
@@ -37,25 +38,25 @@ class TeacherController extends Controller
             'email' => 'required|email|unique:teachers,email',
             'contact' => 'required|string|max:15',
             'designation' => 'required|string|max:255',
-            'monthly_salary' => 'required|integer|min:0'
+            'monthly_salary' => 'required|integer|min:0',
         ]);
 
-        $teacher = ModelsTeacher::create($validated);
+        $teacher = Teacher::create($validated);
 
         return response()->json([
             'message' => 'Teacher created successfully',
-            'teacher' => $teacher
+            'teacher' => $teacher,
         ], 201);
     }
 
     // Update teacher
-    public function updateTeacher(Request $request, $id)
+    public function updateTeacher(Request $request, int $id): JsonResponse
     {
-        $teacher = ModelsTeacher::find($id);
+        $teacher = Teacher::find($id);
 
-        if (!$teacher) {
+        if (! $teacher) {
             return response()->json([
-                'message' => 'Teacher not found'
+                'message' => 'Teacher not found',
             ], 404);
         }
 
@@ -66,32 +67,32 @@ class TeacherController extends Controller
             'email' => "sometimes|email|unique:teachers,email,$id",
             'contact' => 'sometimes|string|max:15',
             'designation' => 'sometimes|string|max:255',
-            'monthly_salary' => 'sometimes|integer|min:0'
+            'monthly_salary' => 'sometimes|integer|min:0',
         ]);
 
         $teacher->update($validated);
 
         return response()->json([
             'message' => 'Teacher updated successfully',
-            'teacher' => $teacher
+            'teacher' => $teacher,
         ], 200);
     }
 
     // Delete teacher
-    public function deleteTeacher($id)
+    public function deleteTeacher(int $id): JsonResponse
     {
-        $teacher = ModelsTeacher::find($id);
+        $teacher = Teacher::find($id);
 
-        if (!$teacher) {
+        if (! $teacher) {
             return response()->json([
-                'message' => 'Teacher not found'
+                'message' => 'Teacher not found',
             ], 404);
         }
 
         $teacher->delete();
 
         return response()->json([
-            'message' => 'Teacher deleted successfully'
+            'message' => 'Teacher deleted successfully',
         ], 200);
     }
 }

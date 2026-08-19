@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class StudentController extends Controller
 {
-    // Add Student 
-    public function addStudent(Request $request)
+    // Add Student
+    public function addStudent(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'classId' => 'required|exists:classes,id',
@@ -20,7 +21,7 @@ class StudentController extends Controller
             'password' => 'required|min:6',
             'contact' => 'required',
             'parentContact' => 'required',
-            'address' => 'required|string'
+            'address' => 'required|string',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -28,32 +29,27 @@ class StudentController extends Controller
         Student::create($validated);
 
         return response()->json([
-            'message' => 'Student added successfully'
+            'message' => 'Student added successfully',
         ]);
     }
 
-    // get Student 
-    public function getStudent($id){
+    // get Student
+    public function getStudent(int $id): JsonResponse
+    {
 
         $student = Student::with('class')->find($id);
 
-        if(!$student){
-            return response()->json(['message'=>'Student not found'],404);
-        };
+        if (! $student) {
+            return response()->json(['message' => 'Student not found'], 404);
+        }
 
         return response()->json($student);
     }
 
-
-    public function getAllStudentFromClass($id){
-        $students = Student::with('class')->where( 'classId', $id )->get();
-
-        if(!$students){
-            return response()->json(['message'=>'There are no students in the class'] , 404);
-        }
+    public function getAllStudentFromClass(int $id): JsonResponse
+    {
+        $students = Student::with('class')->where('classId', $id)->get();
 
         return response()->json($students);
     }
-
-    
 }

@@ -1,20 +1,17 @@
 <?php
 
-
-
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassesController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeacherController;
 use Illuminate\Support\Facades\Route;
 
-
 // ====================
 // Authentication
 // ====================
 
 Route::post('/login', [AuthController::class, 'login']);
-
+Route::post('/register', [AuthController::class, 'register']);
 
 // ====================
 // Protected Routes
@@ -26,7 +23,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-
     // ====================
     // Classes
     // ====================
@@ -37,7 +33,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/classes/{id}', [ClassesController::class, 'updateClass']);
     Route::delete('/classes/{id}', [ClassesController::class, 'deleteClass']);
 
-
     // ====================
     // Students
     // ====================
@@ -45,7 +40,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/students', [StudentController::class, 'addStudent']);
     Route::get('/student/{id}', [StudentController::class, 'getStudent']);
     Route::get('/student/class/{id}', [StudentController::class, 'getAllStudentFromClass']);
-
 
     // ====================
     // Teachers
@@ -58,4 +52,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/teachers/{id}', [TeacherController::class, 'deleteTeacher']);
 
 });
-
