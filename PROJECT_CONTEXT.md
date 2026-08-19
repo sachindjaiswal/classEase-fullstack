@@ -43,7 +43,8 @@ With the whole stack up (mysql 3307, redis 6380, nginx 8080, client 5174):
 - `GET http://localhost:8080/up` → Laravel "Application up" page.
 - `POST /api/register` (name, email, password + password_confirmation, role) → user + Sanctum token.
 - `GET /api/me` with `Authorization: Bearer <token>` → the user (auth:sanctum works).
-- `GET /api/classes` with token → `{data: []}` (DB read through mysql works; seeder seeds nothing on a fresh DB).
+- `GET /api/classes` with token → `{data: []}` (DB read through mysql works). **Note:** the
+  `ClassEaseTestDataSeeder` was empty at that time — it was restored and re-seeded later (see "Seed data" below).
 - `GET http://localhost:5174` → ClassEase SPA; `POST http://localhost:5174/api/login` → 422 (Vite proxy → nginx → Laravel chain works).
 
 ### Environment facts that make these commands non-trivial (Windows)
@@ -170,6 +171,17 @@ reads the trait `@use` tag on the use-clause PHPDoc).
 - `UserFactory` — for User (updated).
 - `ClassEaseTestDataSeeder` + `DatabaseSeeder` — seed Users (students/teachers/admin) + classes.
 
+### Test accounts (password for all: `ClassEase@123`)
+
+| Role | Email |
+|---|---|
+| admin | `admin@classease.com` |
+| teacher | `teacher1@classease.com`, `teacher2@classease.com`, `teacher3@classease.com` |
+| student | `student1@classease.com` … `student6@classease.com` |
+
+Seeder is `updateOrCreate`-based (idempotent). Note: `teachers.email`, `students.email`,
+`students.password` are NOT NULL — any future edits to the seeder must set them.
+
 ## Frontend
 
 - **classEase (Inertia)**: React 19, Tailwind v4 (Vite plugin, CSS-first), laravel-vite-plugin.
@@ -192,6 +204,5 @@ reads the trait `@use` tag on the use-clause PHPDoc).
 
 - Subjects: `SubjectController` empty, no API routes for subjects, subject views not built.
 - Wayfinder routes must be regenerated (`npm run build` / wayfinder:generate) after route changes.
-- Everything is uncommitted on `main` — the user may want a commit of the current green baseline.
 - Optionally clean up the `phpverif` one-off container when no longer needed
   (`docker rm -f phpverif`).
