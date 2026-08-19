@@ -35,6 +35,16 @@ All of the following pass. **Run in this order.**
 | PHP lint | `& "C:\xampp\php\php.exe" vendor\bin\pint --test` | PASS |
 | PHPStan (lvl 7) | `docker exec phpverif php vendor/bin/phpstan analyse --no-progress` | PASS |
 | Tests | see "Running Tests" below | 3 passed (6 assertions) |
+| Full-stack smoke | `docker compose up -d` + register/login/me/classes via :8080, client SPA + proxy via :5174 | PASS (2026-08-19) |
+
+### Full-stack smoke test (2026-08-19)
+
+With the whole stack up (mysql 3307, redis 6380, nginx 8080, client 5174):
+- `GET http://localhost:8080/up` → Laravel "Application up" page.
+- `POST /api/register` (name, email, password + password_confirmation, role) → user + Sanctum token.
+- `GET /api/me` with `Authorization: Bearer <token>` → the user (auth:sanctum works).
+- `GET /api/classes` with token → `{data: []}` (DB read through mysql works; seeder seeds nothing on a fresh DB).
+- `GET http://localhost:5174` → ClassEase SPA; `POST http://localhost:5174/api/login` → 422 (Vite proxy → nginx → Laravel chain works).
 
 ### Environment facts that make these commands non-trivial (Windows)
 
@@ -68,12 +78,15 @@ Services (`docker-compose.yml` at repo root):
 
 | Service | Container | Host port | Role |
 |---|---|---|---|
-| `mysql` | classease-mysql | 3306 | MySQL 8.0, DB `classease`, user `classease`/`secret`, root `rootsecret` |
-| `redis` | classease-redis | 6379 | Cache, sessions, queue |
+| `mysql` | classease-mysql | **3307** | MySQL 8.0, DB `classease`, user `classease`/`secret`, root `rootsecret` |
+| `redis` | classease-redis | **6380** | Cache, sessions, queue |
 | `app` | classease-app | 9000 (internal) | Laravel PHP-FPM (build context `docker/php/Dockerfile`) |
 | `queue` | classease-queue | — | `php artisan queue:work --sleep=3 --tries=3 --max-time=3600` |
-| `client` | classease-client | 5173 | Vite dev server (build context `docker/client/Dockerfile`) |
-| `nginx` | classease-nginx | 80 | Reverse proxy → Laravel PHP-FPM |
+| `client` | classease-client | **5174** | Vite dev server (build context `docker/client/Dockerfile`) |
+| `nginx` | classease-nginx | **8080** | Reverse proxy → Laravel PHP-FPM |
+
+> Host ports retuned 2026-08-19: XAMPP MySQL holds 3306, IIS holds 80, local Vite holds 5173.
+> Inside the Docker network services still use standard ports (mysql:3306, redis:6379, nginx:80).
 
 - `docker compose up --build` first run installs deps + builds assets automatically
   (`docker/php/entrypoint.sh`: creates `.env` from `.env.example` + APP_KEY if missing,
@@ -84,10 +97,10 @@ Services (`docker-compose.yml` at repo root):
   APP_KEY is hardcoded in compose to match the local `.env`.
 - `app` and `queue` share the `classease-app` image + `php-vendor` volume; `queue` uses `image: classease-app`,
   do NOT give it its own `build:`.
-- `app` healthcheck uses `pgrep php-fpm` (no curl in the PHP image).
+- `app` healthcheck is `kill -0 1` (PHP image has neither curl nor pgrep; php-fpm is pid 1).
 - `client/vite.config.ts` reads `VITE_API_TARGET` for proxy target (default `http://localhost:8000`
   locally, `http://nginx` in Docker) and sets `host: '0.0.0.0'`.
-- Network flow: Browser → `localhost:80` (nginx) → `/api/*` → Laravel; `localhost:5173` (client)
+- Network flow: Browser → `localhost:8080` (nginx) → `/api/*` → Laravel; `localhost:5174` (client)
   → `/api/*` proxied by Vite → `http://nginx` → Laravel.
 - `.dockerignore` at repo root excludes vendor, node_modules, .env, git.
 
