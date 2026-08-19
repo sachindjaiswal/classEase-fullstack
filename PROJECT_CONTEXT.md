@@ -17,15 +17,10 @@ Two separate apps in one repo:
 
 ## Git State
 
-- Branch: `main`, HEAD: `aabc51e` (`database(subject): created the migrations and model for the subjects`).
-- **Nothing is committed since that point** — a large amount of work is uncommitted:
-  - Docker stack: `.dockerignore`, `docker-compose.yml`, `docker/` (all new)
-  - `AGENTS.md` (new, never committed), `client/` (new, whole app)
-  - `composer-setup.php` (composer installer boilerplate, untracked)
-  - 2 new migrations (untracked): `add_email_to_teachers`, `add_email_password_to_students`
-  - Modified: all 5 models, 4 controllers, `ClassesResource`, `config/sanctum.php`,
-    `routes/web.php`, `routes/api.php`, `tests/*`, `pint.json`, seeders, `UserFactory.php`,
-    `create_users_table.php`, `package-lock.json`, `resources/js/pages/getClasses.tsx`
+- Branch: `main`, HEAD: `68b3808` (`chore(baseline): Dockerized stack, standalone client, agent checkpoint, green baseline`).
+- The green baseline is committed (75 files). Still untracked: `classEase/composer-setup.php`
+  (Composer installer boilerplate, intentionally excluded).
+- Prior HEAD was `aabc51e` (`database(subject): created the migrations and model for the subjects`).
 - Commit style seen in history: `type(scope): message` (e.g. `fix(auth): ...`, `chore(setup): ...`).
 
 ## Verified Green Baseline (2026-08-19)
