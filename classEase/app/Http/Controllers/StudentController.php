@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -54,6 +55,26 @@ class StudentController extends Controller
 
         return response()->json($students);
     }
+
+    public function getStudentSubjects($id)
+{
+    $student = Student::find($id);
+
+    if (!$student) {
+        return response()->json([
+            'message' => 'Student not found'
+        ], 404);
+    }
+
+    $subjects = Subject::where('classId', $student->classId)
+        ->with('teacher')
+        ->get();
+
+    return response()->json([
+        'message' => 'Student subjects retrieved successfully',
+        'subjects' => $subjects
+    ]);
+}
 
     
 }

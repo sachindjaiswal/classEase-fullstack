@@ -5,6 +5,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassesController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,7 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/students', [StudentController::class, 'addStudent']);
     Route::get('/student/{id}', [StudentController::class, 'getStudent']);
     Route::get('/student/class/{id}', [StudentController::class, 'getAllStudentFromClass']);
-
+    Route::get('/student/{id}/subjects',[StudentController::class, 'getStudentSubjects']);
 
     // ====================
     // Teachers
@@ -56,6 +57,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/teachers/{id}', [TeacherController::class, 'getTeacher']);
     Route::put('/teachers/{id}', [TeacherController::class, 'updateTeacher']);
     Route::delete('/teachers/{id}', [TeacherController::class, 'deleteTeacher']);
+    Route::get('/teacher/{id}/subjects',[TeacherController::class, 'getTeacherSubjects']);
+
+       // ====================
+    // Subject
+    // ====================
+    Route::get('/subjects', [SubjectController::class, 'getAllSubjects']);
+    Route::get('/subjects/{id}', [SubjectController::class, 'getSubject']);
+    Route::post('/subjects', [SubjectController::class, 'createSubject']);
+    Route::put('/subjects/{id}', [SubjectController::class, 'updateSubject']);
+    Route::delete('/subjects/{id}', [SubjectController::class, 'deleteSubject']);
 
 });
 
