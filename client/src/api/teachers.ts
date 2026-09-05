@@ -1,5 +1,5 @@
 import api from './axios';
-import type { Teacher, TeacherInput } from '@/types';
+import type { Teacher, TeacherInput, SubjectFull } from '@/types';
 
 export const getTeachers = () => api.get<Teacher[]>('/teachers');
 
@@ -13,3 +13,6 @@ export const updateTeacher = (id: number, payload: Partial<TeacherInput>) =>
 
 export const deleteTeacher = (id: number) =>
   api.delete<{ message: string }>(`/teachers/${id}`);
+
+export const getTeacherSubjects = (id: number) =>
+  api.get<{ message: string; subjects: SubjectFull[] }>(`/teacher/${id}/subjects`);

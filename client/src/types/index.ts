@@ -92,3 +92,92 @@ export interface Student {
   address: string;
   class?: StudentClassSummary | null;
 }
+
+// ── Subject ────────────────────────────────────────────────
+export interface Subject {
+  id: number;
+  classId: number;
+  subjectName: string;
+  teacherId: number | null;
+}
+
+export type SubjectInput = Omit<Subject, 'id'>;
+
+export interface TeacherSummary {
+  id: number;
+  first_name: string;
+  surname: string;
+}
+
+export interface ClassSummary {
+  id: number;
+  class_name: string;
+}
+
+export interface SubjectFull extends Subject {
+  class: ClassSummary | null;
+  teacher: TeacherSummary | null;
+}
+
+// ── Dashboard ──────────────────────────────────────────────
+export interface DashboardStats {
+  teachers: number;
+  students: number;
+  classes: number;
+  subjects: number;
+}
+
+// ── Attendance ──────────────────────────────────────────────
+export type AttendanceStatus = 'present' | 'absent' | 'late';
+
+export interface AttendanceItem {
+  student_id: number;
+  firstName: string;
+  surname: string;
+  status: AttendanceStatus | null;
+  remarks: string | null;
+}
+
+export interface AttendancePayload {
+  class_id: number;
+  date: string;
+  attendances: {
+    student_id: number;
+    status: AttendanceStatus;
+    remarks?: string;
+  }[];
+}
+
+export interface AttendanceRecord {
+  id: number;
+  student_id: number;
+  class_id: number;
+  date: string;
+  status: AttendanceStatus;
+  remarks: string | null;
+  class?: ClassSummary;
+}
+
+export interface AttendanceSummary {
+  total: number;
+  present: number;
+  absent: number;
+  late: number;
+}
+
+// ── Homework ──────────────────────────────────────────────
+export interface Homework {
+  id: number;
+  class_id: number;
+  subject_id: number;
+  assigned_by: number | null;
+  title: string;
+  description: string | null;
+  assigned_date: string;
+  due_date: string;
+  class?: ClassSummary;
+  subject?: Subject;
+  teacher?: TeacherSummary;
+}
+
+export type HomeworkInput = Omit<Homework, 'id' | 'class' | 'subject' | 'teacher' | 'assigned_by'> & { assigned_by?: number | null };
