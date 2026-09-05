@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getClasses } from '@/api/classes';
-import { getStudentsByClass } from '@/api/students';
+import { getStudentsByClass, deleteStudent } from '@/api/students';
 import type { SchoolClass, Student } from '@/types';
 import Button from '@/components/Button';
 
@@ -12,6 +12,7 @@ export default function StudentsByClass() {
     const [loadingClasses, setLoadingClasses] = useState(true);
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         getClasses()
@@ -33,6 +34,20 @@ export default function StudentsByClass() {
             .catch(() => setError("Couldn't load students for this class."))
             .finally(() => setLoadingStudents(false));
     }, [selectedClassId]);
+
+    const handleDelete = async (id: number) => {
+        if (!confirm('Remove this student?')) return;
+        try {
+            await deleteStudent(id);
+            if (selectedClassId !== null) {
+                getStudentsByClass(selectedClassId)
+                    .then((res) => setStudents(res.data))
+                    .catch(() => setError("Couldn't load students."));
+            }
+        } catch {
+            alert('Failed to delete student.');
+        }
+    };
 
     return (
         <div>
@@ -105,43 +120,61 @@ export default function StudentsByClass() {
                         {!loadingStudents && !error && students.length > 0 && (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-sm">
-                                    <thead className="bg-base text-xs uppercase tracking-wide text-muted">
-                                        <tr>
-                                            <th className="whitespace-nowrap px-5 py-3 font-medium">
-                                                Name
-                                            </th>
-                                            <th className="whitespace-nowrap px-5 py-3 font-medium">
-                                                Email
-                                            </th>
-                                            <th className="whitespace-nowrap px-5 py-3 font-medium">
-                                                Contact
-                                            </th>
-                                            <th className="whitespace-nowrap px-5 py-3 font-medium">
-                                                Parent Contact
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border">
-                                        {students.map((s) => (
-                                            <tr
-                                                key={s.id}
-                                                className="hover:bg-base/60"
-                                            >
-                                                <td className="whitespace-nowrap px-5 py-3 font-medium text-ink2">
-                                                    {s.firstName} {s.surname}
-                                                </td>
-                                                <td className="whitespace-nowrap px-5 py-3 text-muted">
-                                                    {s.email}
-                                                </td>
-                                                <td className="whitespace-nowrap px-5 py-3 data-figure text-muted">
-                                                    {s.contact}
-                                                </td>
-                                                <td className="whitespace-nowrap px-5 py-3 data-figure text-muted">
-                                                    {s.parentContact}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
+                                     <thead className="bg-base text-xs uppercase tracking-wide text-muted">
+                                         <tr>
+                                             <th className="whitespace-nowrap px-5 py-3 font-medium">
+                                                 Name
+                                             </th>
+                                             <th className="whitespace-nowrap px-5 py-3 font-medium">
+                                                 Email
+                                             </th>
+                                             <th className="whitespace-nowrap px-5 py-3 font-medium">
+                                                 Contact
+                                             </th>
+                                             <th className="whitespace-nowrap px-5 py-3 font-medium">
+                                                 Parent Contact
+                                             </th>
+                                             <th className="whitespace-nowrap px-5 py-3 font-medium"></th>
+                                         </tr>
+                                     </thead>
+                                     <tbody className="divide-y divide-border">
+                                         {students.map((s) => (
+                                             <tr key={s.id} className="hover:bg-base/60">
+                                                 <td className="whitespace-nowrap px-5 py-3 font-medium text-ink2">
+                                                     {s.firstName} {s.surname}
+                                                 </td>
+                                                 <td className="whitespace-nowrap px-5 py-3 text-muted">
+                                                     {s.email}
+                                                 </td>
+                                                 <td className="whitespace-nowrap px-5 py-3 data-figure text-muted">
+                                                     {s.contact}
+                                                 </td>
+                                                 <td className="whitespace-nowrap px-5 py-3 data-figure text-muted">
+                                                     {s.parentContact}
+                                                 </td>
+                                                 <td className="whitespace-nowrap px-5 py-3 text-right">
+                                                     <button
+                                                         onClick={() => navigate(`/management/students/${s.id}/subjects`)}
+                                                         className="mr-4 text-sm font-medium text-ink hover:underline"
+                                                     >
+                                                         Subjects
+                                                     </button>
+                                                     <button
+                                                         onClick={() => navigate(`/management/students/${s.id}/edit`)}
+                                                         className="mr-4 text-sm font-medium text-ink hover:underline"
+                                                     >
+                                                         Edit
+                                                     </button>
+                                                     <button
+                                                         onClick={() => handleDelete(s.id)}
+                                                         className="text-sm font-medium text-danger hover:underline"
+                                                     >
+                                                         Delete
+                                                     </button>
+                                                 </td>
+                                             </tr>
+                                         ))}
+                                     </tbody>
                                 </table>
                             </div>
                         )}

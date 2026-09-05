@@ -9,10 +9,21 @@ import Unauthorized from '@/pages/Unauthorized';
 import ManagementDashboard from '@/pages/management/Dashboard';
 import TeacherList from '@/pages/management/Teachers/TeacherList';
 import AddTeacher from '@/pages/management/Teachers/AddTeacher';
+import EditTeacher from '@/pages/management/Teachers/EditTeacher';
+import TeacherSubjects from '@/pages/management/Teachers/TeacherSubjects';
 import ClassList from '@/pages/management/Classes/ClassList';
 import ClassForm from '@/pages/management/Classes/ClassForm';
 import StudentsByClass from '@/pages/management/Students/StudentsByClass';
 import AddStudent from '@/pages/management/Students/AddStudent';
+import EditStudent from '@/pages/management/Students/EditStudent';
+import StudentSubjects from '@/pages/management/Students/StudentSubjects';
+import SubjectList from '@/pages/management/Subjects/SubjectList';
+import SubjectForm from '@/pages/management/Subjects/SubjectForm';
+import MarkAttendance from '@/pages/management/Attendance/MarkAttendance';
+import ViewAttendance from '@/pages/management/Attendance/ViewAttendance';
+import HomeworkList from '@/pages/management/Homework/HomeworkList';
+import AddHomework from '@/pages/management/Homework/AddHomework';
+import EditHomework from '@/pages/management/Homework/EditHomework';
 
 import TeacherDashboard from '@/pages/teacher/Dashboard';
 import StudentDashboard from '@/pages/student/Dashboard';
@@ -32,12 +43,23 @@ export default function AppRouter() {
             <Route path="/management/dashboard" element={<ManagementDashboard />} />
             <Route path="/management/teachers" element={<TeacherList />} />
             <Route path="/management/teachers/new" element={<AddTeacher />} />
+            <Route path="/management/teachers/:id/edit" element={<EditTeacher />} />
+            <Route path="/management/teachers/:id/subjects" element={<TeacherSubjects />} />
             <Route path="/management/classes" element={<ClassList />} />
             <Route path="/management/classes/new" element={<ClassForm />} />
             <Route path="/management/classes/:id/edit" element={<ClassForm />} />
             <Route path="/management/students" element={<StudentsByClass />} />
             <Route path="/management/students/new" element={<AddStudent />} />
-            {/* announcements, timetable routes go here as they're built */}
+            <Route path="/management/students/:id/edit" element={<EditStudent />} />
+            <Route path="/management/students/:id/subjects" element={<StudentSubjects />} />
+            <Route path="/management/subjects" element={<SubjectList />} />
+            <Route path="/management/subjects/new" element={<SubjectForm />} />
+            <Route path="/management/subjects/:id/edit" element={<SubjectForm />} />
+            <Route path="/management/attendance" element={<MarkAttendance />} />
+            <Route path="/management/attendance/view" element={<ViewAttendance />} />
+            <Route path="/management/homework" element={<HomeworkList />} />
+            <Route path="/management/homework/new" element={<AddHomework />} />
+            <Route path="/management/homework/:id/edit" element={<EditHomework />} />
           </Route>
         </Route>
 
@@ -45,7 +67,6 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute allow={['teacher']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-            {/* attendance, homework, scores, concerns routes go here */}
           </Route>
         </Route>
 
@@ -53,7 +74,6 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute allow={['student']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
-            {/* performance, leaderboard, concerns routes go here */}
           </Route>
         </Route>
 

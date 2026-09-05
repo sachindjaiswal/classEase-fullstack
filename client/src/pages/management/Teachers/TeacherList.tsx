@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { getTeachers, deleteTeacher } from '@/api/teachers';
+import { Link, useNavigate } from 'react-router-dom';
+import { getTeachers, deleteTeacher, getTeacher } from '@/api/teachers';
 import type { Teacher } from '@/types';
 import Button from '@/components/Button';
 
@@ -8,6 +8,7 @@ export default function TeacherList() {
     const [teachers, setTeachers] = useState<Teacher[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const load = () => {
         setLoading(true);
@@ -91,14 +92,26 @@ export default function TeacherList() {
                                         <td className="whitespace-nowrap px-5 py-3 data-figure">
                                             ₹{Number(t.monthly_salary).toLocaleString('en-IN')}
                                         </td>
-                                        <td className="whitespace-nowrap px-5 py-3 text-right">
-                                            <button
-                                                onClick={() => handleDelete(t.id)}
-                                                className="text-sm font-medium text-danger hover:underline"
-                                            >
-                                                Remove
-                                            </button>
-                                        </td>
+                                         <td className="whitespace-nowrap px-5 py-3 text-right">
+                                             <button
+                                                 onClick={() => navigate(`/management/teachers/${t.id}/subjects`)}
+                                                 className="mr-4 text-sm font-medium text-ink hover:underline"
+                                             >
+                                                 Subjects
+                                             </button>
+                                             <button
+                                                 onClick={() => navigate(`/management/teachers/${t.id}/edit`)}
+                                                 className="mr-4 text-sm font-medium text-ink hover:underline"
+                                             >
+                                                 Edit
+                                             </button>
+                                             <button
+                                                 onClick={() => handleDelete(t.id)}
+                                                 className="text-sm font-medium text-danger hover:underline"
+                                             >
+                                                 Remove
+                                             </button>
+                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
