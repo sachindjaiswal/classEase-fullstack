@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Subject;
 use App\Models\Teacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -94,5 +95,25 @@ class TeacherController extends Controller
         return response()->json([
             'message' => 'Teacher deleted successfully',
         ], 200);
+    }
+
+    public function getTeacherSubjects($id)
+    {
+        $teacher = Teacher::find($id);
+
+        if (! $teacher) {
+            return response()->json([
+                'message' => 'Teacher not found',
+            ], 404);
+        }
+
+        $subjects = Subject::where('teacherId', $id)
+            ->with('class')
+            ->get();
+
+        return response()->json([
+            'message' => 'Teacher subjects retrieved successfully',
+            'subjects' => $subjects,
+        ]);
     }
 }
