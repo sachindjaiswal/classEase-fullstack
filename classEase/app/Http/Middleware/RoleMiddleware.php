@@ -15,15 +15,15 @@ class RoleMiddleware
     ): Response {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
-                'message' => 'Unauthenticated.'
+                'message' => 'Unauthenticated.',
             ], 401);
         }
 
-        if (!in_array($user->role, $roles)) {
+        if (! in_array($user->role, $roles)) {
             return response()->json([
-                'message' => 'You do not have permission to perform this action.'
+                'message' => 'You do not have permission to perform this action.',
             ], 403);
         }
 
