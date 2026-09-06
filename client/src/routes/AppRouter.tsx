@@ -24,6 +24,13 @@ import ViewAttendance from '@/pages/management/Attendance/ViewAttendance';
 import HomeworkList from '@/pages/management/Homework/HomeworkList';
 import AddHomework from '@/pages/management/Homework/AddHomework';
 import EditHomework from '@/pages/management/Homework/EditHomework';
+import ScoresByClass from '@/pages/management/Scores/ScoresByClass';
+import AddScore from '@/pages/management/Scores/AddScore';
+import EditScore from '@/pages/management/Scores/EditScore';
+import LeaderboardByClass from '@/pages/management/Leaderboard/LeaderboardByClass';
+import AnnouncementList from '@/pages/management/Announcements/AnnouncementList';
+import AddAnnouncement from '@/pages/management/Announcements/AddAnnouncement';
+import EditAnnouncement from '@/pages/management/Announcements/EditAnnouncement';
 
 import TeacherDashboard from '@/pages/teacher/Dashboard';
 import StudentDashboard from '@/pages/student/Dashboard';
@@ -60,6 +67,13 @@ export default function AppRouter() {
             <Route path="/management/homework" element={<HomeworkList />} />
             <Route path="/management/homework/new" element={<AddHomework />} />
             <Route path="/management/homework/:id/edit" element={<EditHomework />} />
+            <Route path="/management/scores" element={<ScoresByClass />} />
+            <Route path="/management/scores/new" element={<AddScore />} />
+            <Route path="/management/scores/:id/edit" element={<EditScore />} />
+            <Route path="/management/leaderboard" element={<LeaderboardByClass />} />
+            <Route path="/management/announcements" element={<AnnouncementList />} />
+            <Route path="/management/announcements/new" element={<AddAnnouncement />} />
+            <Route path="/management/announcements/:id/edit" element={<EditAnnouncement />} />
           </Route>
         </Route>
 

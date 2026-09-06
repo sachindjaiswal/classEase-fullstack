@@ -1,10 +1,13 @@
 <?php
 
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassesController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeworkController;
+use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\ScoreController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherController;
@@ -93,5 +96,34 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/homework/{id}', [HomeworkController::class, 'deleteHomework']);
     Route::get('/homework/class/{classId}', [HomeworkController::class, 'getHomeworkByClass']);
     Route::get('/homework/student/{studentId}', [HomeworkController::class, 'getHomeworkByStudent']);
+
+    // ====================
+    // Scores
+    // ====================
+
+    Route::post('/scores', [ScoreController::class, 'addScore']);
+    Route::get('/scores/{id}', [ScoreController::class, 'getScore']);
+    Route::put('/scores/{id}', [ScoreController::class, 'updateScore']);
+    Route::delete('/scores/{id}', [ScoreController::class, 'deleteScore']);
+    Route::get('/scores/class/{classId}', [ScoreController::class, 'getScoresByClass']);
+    Route::get('/scores/student/{studentId}', [ScoreController::class, 'getStudentScores']);
+
+    // ====================
+    // Leaderboard
+    // ====================
+
+    Route::get('/leaderboard/class/{classId}', [LeaderboardController::class, 'getLeaderboardByClass']);
+
+    // ====================
+    // Announcements
+    // ====================
+
+    Route::post('/announcements', [AnnouncementController::class, 'createAnnouncement']);
+    Route::get('/announcements', [AnnouncementController::class, 'getAnnouncements']);
+    Route::get('/announcements/class/{classId}', [AnnouncementController::class, 'getAnnouncementsByClass']);
+    Route::get('/announcements/student/{studentId}', [AnnouncementController::class, 'getAnnouncementsByStudent']);
+    Route::get('/announcements/{id}', [AnnouncementController::class, 'getAnnouncement']);
+    Route::put('/announcements/{id}', [AnnouncementController::class, 'updateAnnouncement']);
+    Route::delete('/announcements/{id}', [AnnouncementController::class, 'deleteAnnouncement']);
 
 });

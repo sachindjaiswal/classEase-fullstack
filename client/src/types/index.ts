@@ -181,3 +181,72 @@ export interface Homework {
 }
 
 export type HomeworkInput = Omit<Homework, 'id' | 'class' | 'subject' | 'teacher' | 'assigned_by'> & { assigned_by?: number | null };
+
+// ── Scores ──────────────────────────────────────────────
+export interface Score {
+  id: number;
+  student_id: number;
+  subject_id: number;
+  class_id: number;
+  exam_type: string;
+  marks_obtained: number;
+  total_marks: number;
+}
+
+export type ScoreInput = Omit<Score, 'id'>;
+
+// Minimal student shape nested on score responses (backend
+// selects only these columns — password/user_id never exposed).
+export interface StudentSummary {
+  id: number;
+  firstName: string;
+  middleName: string | null;
+  surname: string;
+}
+
+export interface ScoreFull extends Score {
+  student?: StudentSummary | null;
+  subject?: Subject | null;
+  class?: ClassSummary | null;
+}
+
+// ── Leaderboard ──────────────────────────────────────────
+export interface LeaderboardEntry {
+  rank: number;
+  student: StudentSummary | null;
+  exams_count: number;
+  marks_obtained: number;
+  total_marks: number;
+  average_percentage: number;
+}
+
+export interface LeaderboardResponse {
+  message: string;
+  class: ClassSummary | null;
+  exam: string | null;
+  leaderboard: LeaderboardEntry[];
+}
+
+// ── Announcements ────────────────────────────────────────
+export interface AnnouncementPoster {
+  id: number;
+  name: string;
+}
+
+export interface Announcement {
+  id: number;
+  class_id: number | null;
+  title: string;
+  description: string | null;
+  posted_by: number | null;
+  created_at: string;
+  updated_at: string;
+  class?: ClassSummary | null;
+  poster?: AnnouncementPoster | null;
+}
+
+export interface AnnouncementInput {
+  class_id: number | null;
+  title: string;
+  description: string | null;
+}

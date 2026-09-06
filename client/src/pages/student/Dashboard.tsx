@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getStudent } from '@/api/students';
 import { getStudentSubjects } from '@/api/students';
-import type { Student, SubjectFull } from '@/types';
+import { getStudentScores } from '@/api/scores';
+import { getAnnouncementsByStudent } from '@/api/announcements';
+import type { Student, SubjectFull, ScoreFull, Announcement } from '@/types';
 
 export default function StudentDashboard() {
     const { user } = useAuth();
     const [student, setStudent] = useState<Student | null>(null);
     const [subjects, setSubjects] = useState<SubjectFull[]>([]);
+    const [scores, setScores] = useState<ScoreFull[]>([]);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -21,6 +25,14 @@ export default function StudentDashboard() {
             })
             .then((res) => {
                 setSubjects(res.data.subjects);
+                return getStudentScores(user.id);
+            })
+            .then((res) => {
+                setScores(res.data.scores);
+                return getAnnouncementsByStudent(user.id);
+            })
+            .then((res) => {
+                setAnnouncements(res.data.announcements);
             })
             .catch(() => setError("Couldn't load dashboard data."))
             .finally(() => setLoading(false));
@@ -93,6 +105,64 @@ export default function StudentDashboard() {
                                                 Teacher: {s.teacher.first_name} {s.teacher.surname}
                                             </p>
                                         )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="rounded-lg border border-border bg-surface p-5">
+                        <h2 className="text-sm font-medium text-muted">
+                            Your Scores ({scores.length})
+                        </h2>
+                        {scores.length === 0 ? (
+                            <p className="mt-3 text-sm text-muted">No scores recorded yet.</p>
+                        ) : (
+                            <div className="mt-3 divide-y divide-border">
+                                {scores.map((s) => {
+                                    const pct = s.total_marks
+                                        ? Math.round((s.marks_obtained / s.total_marks) * 100)
+                                        : 0;
+                                    return (
+                                        <div key={s.id} className="py-2">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-sm font-medium text-ink2">
+                                                    {s.subject?.subjectName ?? 'Subject'}{' '}
+                                                    <span className="text-xs font-normal text-muted">
+                                                        — {s.exam_type}
+                                                    </span>
+                                                </p>
+                                                <p className="data-figure text-sm font-semibold text-ink2">
+                                                    {s.marks_obtained}/{s.total_marks} ({pct}%)
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                    <div className="rounded-lg border border-border bg-surface p-5">
+                        <h2 className="text-sm font-medium text-muted">
+                            Announcements ({announcements.length})
+                        </h2>
+                        {announcements.length === 0 ? (
+                            <p className="mt-3 text-sm text-muted">No announcements.</p>
+                        ) : (
+                            <div className="mt-3 divide-y divide-border">
+                                {announcements.map((a) => (
+                                    <div key={a.id} className="py-2">
+                                        <p className="text-sm font-medium text-ink2">{a.title}</p>
+                                        {a.description && (
+                                            <p className="mt-0.5 text-sm text-muted">{a.description}</p>
+                                        )}
+                                        <p className="mt-0.5 text-xs text-muted">
+                                            {a.poster?.name ?? 'Administration'}
+                                            {a.class
+                                                ? ` — ${a.class.class_name}`
+                                                : ''}{' '}
+                                            • {new Date(a.created_at).toLocaleDateString()}
+                                        </p>
                                     </div>
                                 ))}
                             </div>

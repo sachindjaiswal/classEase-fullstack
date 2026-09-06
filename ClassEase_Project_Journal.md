@@ -561,6 +561,27 @@ graph TB
 - Overdue indicator
 - Student view (by class)
 
+### Module 9: Scores
+- Record marks per student, subject and exam
+- Three exam types (Unit Test, Midterm Exam, Final Exam)
+- List scores by class with exam filter
+- Edit and delete scores
+- Percentage display
+- Duplicate guard (one score per student/subject/exam)
+- Student portal score card
+
+### Module 10: Leaderboard
+- Rank students by overall average percentage per class
+- Optional exam filter (Unit Test / Midterm Exam / Final Exam)
+- Top-3 podium styling (gold / silver / bronze rank badges)
+- Class + exam aware, computed on the fly from scores (no extra table)
+
+### Module 11: Announcements
+- Post announcements to a specific class or to all classes (general)
+- List/edit/delete announcements, newest first
+- Audience + poster (management/teacher) shown per announcement
+- Student portal shows announcements for their class plus general ones
+
 ---
 
 ## 10. API Endpoints
@@ -647,6 +668,35 @@ graph TB
 | GET | `/api/homework/class/{classId}` | List homework by class |
 | GET | `/api/homework/student/{studentId}` | List homework by student |
 
+### Scores
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/scores` | Record a score |
+| GET | `/api/scores/{id}` | Get score details |
+| PUT | `/api/scores/{id}` | Update score |
+| DELETE | `/api/scores/{id}` | Delete score |
+| GET | `/api/scores/class/{classId}` | List scores by class |
+| GET | `/api/scores/student/{studentId}` | List scores by student |
+
+### Leaderboard
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/leaderboard/class/{classId}?exam=` | Rank students in a class by average % (optional exam filter) |
+
+### Announcements
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/announcements` | Create an announcement (class_id null = general) |
+| GET | `/api/announcements` | List all announcements (newest first) |
+| GET | `/api/announcements/{id}` | Get announcement details |
+| PUT | `/api/announcements/{id}` | Update announcement |
+| DELETE | `/api/announcements/{id}` | Delete announcement |
+| GET | `/api/announcements/class/{classId}` | List class announcements + general ones |
+| GET | `/api/announcements/student/{studentId}` | List a student's class + general announcements |
+
 ---
 
 ## 11. Frontend Pages
@@ -671,23 +721,36 @@ Management Dashboard
 ├── Students/
 │   ├── StudentsByClass.tsx
 │   ├── AddStudent.tsx
-│   └── EditStudent.tsx
+│   ├── EditStudent.tsx
+│   └── StudentSubjects.tsx
 ├── Subjects/
 │   ├── SubjectList.tsx
 │   └── SubjectForm.tsx
 ├── Attendance/
 │   ├── MarkAttendance.tsx
 │   └── ViewAttendance.tsx
-└── Homework/
-    ├── HomeworkList.tsx
-    ├── AddHomework.tsx
-    └── EditHomework.tsx
+├── Homework/
+│   ├── HomeworkList.tsx
+│   ├── AddHomework.tsx
+│   └── EditHomework.tsx
+└── Scores/
+    ├── ScoresByClass.tsx
+    ├── AddScore.tsx
+    ├── EditScore.tsx
+    └── exams.ts
+└── Leaderboard/
+    └── LeaderboardByClass.tsx
+└── Announcements/
+    ├── AnnouncementList.tsx
+    ├── AddAnnouncement.tsx
+    └── EditAnnouncement.tsx
 
 Teacher Dashboard
-└── Dashboard.tsx              (Profile + Subjects)
+├── Dashboard.tsx              (Profile + Subjects)
+└── Teacher subjects view (management → TeacherSubjects.tsx)
 
 Student Dashboard
-└── Dashboard.tsx              (Profile + Class + Subjects)
+└── Dashboard.tsx              (Profile + Class + Subjects + Scores)
 ```
 
 ### Navigation Flow
@@ -708,13 +771,18 @@ graph TD
     ADASH --> ASUBJ[Subjects<br/>/management/subjects]
     ADASH --> AATT[Attendance<br/>/management/attendance/mark<br/>/management/attendance/view]
     ADASH --> AHW[Homework<br/>/management/homework]
+    ADASH --> ASCORE[Scores<br/>/management/scores]
+    ADASH --> ALEAD[Leaderboard<br/>/management/leaderboard]
+    ADASH --> AANN[Announcements<br/>/management/announcements]
 
     ASTUD --> ASTUD1[Students by Class]
     ASTUD --> ASTUD2[Add Student]
     ASTUD --> ASTUD3[Edit Student]
+    ASTUD --> ASTUD4[Student Subjects]
 
     ATEACH --> ATEACH1[Add Teacher]
     ATEACH --> ATEACH2[Edit Teacher]
+    ATEACH --> ATEACH3[Teacher Subjects]
 
     ACLASS --> ACLASS1[Add Class]
 
@@ -723,8 +791,19 @@ graph TD
     AHW --> AHW1[Add Homework]
     AHW --> AHW2[Edit Homework]
 
+    ASCORE --> ASCORE1[Add Score]
+    ASCORE --> ASCORE2[Edit Score]
+
+    ALEAD --> ALEAD1[Rank by Class]
+    ALEAD --> ALEAD2[Filter by Exam]
+
+    AANN --> AANN1[Add Announcement]
+    AANN --> AANN2[Edit Announcement]
+
     TDASH --> TSUBJ[Assigned Subjects]
     SDASH --> SCONTS[Own Class & Subjects]
+    SDASH --> SCORES[Own Scores]
+    SDASH --> SANN[Own Announcements]
 ```
 
 ---
@@ -813,6 +892,44 @@ graph TD
 - Added homework types and API functions
 - Added Homework link to Sidebar
 
+### Day 7 — September 5, 2026
+**Task:** Scores + Leaderboard + Announcements Modules
+
+**Leaderboard backend:**
+- Created LeaderboardController (rank students by avg %, optional exam filter, computed from scores — no new table)
+- Added route GET /api/leaderboard/class/{classId} under auth:sanctum
+
+**Leaderboard frontend:**
+- Built LeaderboardByClass.tsx (class selector, exam filter, ranked table, top-3 medals)
+- Added leaderboard types (LeaderboardEntry, LeaderboardResponse) + api/leaderboard.ts
+- Added Leaderboard link to Sidebar + route /management/leaderboard
+
+**Announcements backend:**
+- Created Announcement model + migration (nullable class_id = general, posted_by → users)
+- Created AnnouncementController (create, list all, by class, by student, get, update, delete)
+- Added 7 announcement routes under auth:sanctum
+
+**Announcements frontend:**
+- Built AnnouncementList.tsx (audience filter, audience/poster/date columns)
+- Built AddAnnouncement.tsx and EditAnnouncement.tsx (audience select: general or a class)
+- Added announcement types + api/announcements.ts
+- Added Announcements link to Sidebar + routes
+- Added Announcements card to the Student Dashboard (class + general announcements)
+**Backend:**
+- Created Score model with relationships (student, subject, class)
+- Created ScoreController (record, get, list by class, list by student, update, delete)
+- Created scores migration with composite unique constraint (student_id, subject_id, exam_type)
+- Added 6 score routes under auth:sanctum
+- Eager loads select safe columns only (student password/user_id never exposed)
+
+**Frontend:**
+- Built ScoresByClass.tsx (class selector, exam filter, marks + percentage table)
+- Built AddScore.tsx (class → subject → student cascade filters)
+- Built EditScore.tsx
+- Added score types (Score, ScoreInput, StudentSummary, ScoreFull) and API functions
+- Added "Your Scores" card to the Student Dashboard
+- Added Scores link to Sidebar
+
 ---
 
 ## 13. Future Scope
@@ -821,8 +938,9 @@ graph TD
 
 | Feature | Description |
 |---|---|
-| Scores/Performance | Track student marks per subject per exam |
-| Leaderboard | Rank students by performance across subjects |
+| ~~Scores/Performance~~ | ~~Track student marks per subject per exam~~ — **DONE (2026-09-05)** |
+| Leaderboard | Rank students by performance across subjects — **DONE (2026-09-05)** |
+| Announcements | Admin/teacher post announcements to classes — **DONE (2026-09-05)** |
 | Announcements | Admin/teacher post announcements to classes |
 | Timetable | Digital class schedule (period, subject, time) |
 | Concerns | Student/parent raise concerns, admin resolves |

@@ -138,6 +138,8 @@ Services (`docker-compose.yml` at repo root):
   `belongsTo` classes, Teacher. (Model `$hidden` lists `user_id` which doesn't exist on this table — known quirk, harmless.)
 - `Attendance` — `student_id` (FK → students), `class_id` (FK → classes), `date` (date), `status` (enum: present/absent/late), `marked_by` (nullable FK → teachers), `remarks` (nullable). Unique constraint on (`student_id`, `date`). `belongsTo` Student, classes, marker (Teacher).
 - `Homework` — `class_id` (FK → classes), `subject_id` (FK → subjects), `assigned_by` (FK → teachers), `title`, `description` (nullable), `assigned_date` (date), `due_date` (date). `belongsTo` classes, Subject, Teacher.
+- `Score` — `student_id` (FK → students), `subject_id` (FK → subjects), `class_id` (FK → classes), `exam_type` (string: Unit Test/Midterm Exam/Final Exam), `marks_obtained`, `total_marks` (unsigned ints). Composite unique constraint on (`student_id`, `subject_id`, `exam_type`). `belongsTo` Student, Subject, classes.
+- `Announcement` — `class_id` (nullable FK → classes, null = general/all classes), `title`, `description` (nullable), `posted_by` (nullable FK → users). `belongsTo` classes, User (poster).
 
 Relation generics are declared via PHPDoc `@return` tags using `$this` for the declaring model,
 e.g. `@return HasMany<Subject, $this>`. **PHP 8.3/8.4 — never put generics in native signatures**
@@ -159,6 +161,9 @@ reads the trait `@use` tag on the use-clause PHPDoc).
 - `DashboardController` — `getStats` (returns teacher/student/class/subject counts).
 - `AttendanceController` — `markAttendance` (bulk), `getAttendanceByClass`, `getStudentAttendance`, `updateAttendance`.
 - `HomeworkController` — `createHomework`, `getHomework`, `updateHomework`, `deleteHomework`, `getHomeworkByClass`, `getHomeworkByStudent`.
+- `ScoreController` — `addScore`, `getScore`, `getScoresByClass`, `getStudentScores`, `updateScore`, `deleteScore`. Eager-loads only safe columns (student password/user_id never exposed). Duplicate (student_id, subject_id, exam_type) → 409.
+- `LeaderboardController` — `getLeaderboardByClass` — ranks students in a class by overall average percentage (sum marks_obtained / sum total_marks), optional `?exam=` filter, computed on the fly from scores (no new table). Skips students without scores; 404 if class missing.
+- `AnnouncementController` — `createAnnouncement`, `getAnnouncements`, `getAnnouncementsByClass` (class + general), `getAnnouncement`, `updateAnnouncement`, `deleteAnnouncement`, `getAnnouncementsByStudent`. Routes ordered so `/announcements/class|student/{...}` precede `/announcements/{id}`. Eager-loads `class` + `poster` (user: id, name only).
 - `Resources/ClassesResource.php` — has `@property-read` docblock.
 
 ### Routes
@@ -168,17 +173,20 @@ reads the trait `@use` tag on the use-clause PHPDoc).
   `/student/{id}` (GET/PUT/DELETE), `/student/class/{id}` (GET), `/student/{id}/subjects` (GET),
   `/teachers` (GET/POST/PUT/DELETE), `/subjects` (GET/POST/PUT/DELETE),
   `/attendance` (POST), `/attendance/class` (GET), `/attendance/student/{id}` (GET), `/attendance/{id}` (PUT),
-  `/homework` (POST), `/homework/{id}` (GET/PUT/DELETE), `/homework/class/{classId}` (GET), `/homework/student/{studentId}` (GET).
+  `/homework` (POST), `/homework/{id}` (GET/PUT/DELETE), `/homework/class/{classId}` (GET), `/homework/student/{studentId}` (GET),
+  `/scores` (POST), `/scores/{id}` (GET/PUT/DELETE), `/scores/class/{classId}` (GET), `/scores/student/{studentId}` (GET),
+  `/leaderboard/class/{classId}` (GET, optional `?exam=`),
+  `/announcements` (POST/GET), `/announcements/{id}` (GET/PUT/DELETE), `/announcements/class/{classId}` (GET), `/announcements/student/{studentId}` (GET).
 - **Singular/plural inconsistency (do NOT "fix" without fixing the client too):**
   `POST /students` (plural) but `GET /student/{id}` and `GET /student/class/{id}` (singular).
 - `routes/web.php` — only `/student-form` view (plus removed unused AuthController import).
 - `bootstrap/app.php` — health check at `/up`.
 
-### Migrations (12)
+### Migrations (14)
 
 `users`, `cache`, `jobs`, `teachers`, `classes`, `students`, `personal_access_tokens`,
 `subjects`, `add_email_to_teachers`, `add_email_password_to_students`
-(both untracked), `attendances`, `homeworks`. Columns per model above; teachers/students use `softDeletes`.
+(both untracked), `attendances`, `homeworks`, `scores`, `announcements`. Columns per model above; teachers/students use `softDeletes`.
 
 ### Factories / Seeders
 
@@ -207,7 +215,7 @@ Seeder is `updateOrCreate`-based (idempotent). Note: `teachers.email`, `students
   (management/teacher/student), `AuthContext`. **No lint/format/typecheck scripts** — only
   `dev`, `build`, `preview`.
 
-### Client page structure (as of 2026-09-04)
+### Client page structure (as of 2026-09-05)
 
 - **Auth**: `Login.tsx`, `Register.tsx` — `AuthContext` (login, register, logout, me).
 - **Management** (role: management):
@@ -229,15 +237,23 @@ Seeder is `updateOrCreate`-based (idempotent). Note: `teachers.email`, `students
   - `Homework/HomeworkList.tsx` — list homework by class with Edit/Delete
   - `Homework/AddHomework.tsx` — create homework form (class, subject, title, dates)
   - `Homework/EditHomework.tsx` — edit homework form
+  - `Scores/ScoresByClass.tsx` — scores by class with exam filter + Edit/Delete
+  - `Scores/AddScore.tsx` — create score (class → subject → student cascade filters)
+  - `Scores/EditScore.tsx` — edit score
+  - `Scores/exams.ts` — shared exam type constants
+  - `Leaderboard/LeaderboardByClass.tsx` — ranked table (avg % per class, exam filter, top-3 medals)
+  - `Announcements/AnnouncementList.tsx` — audience filter, title/audience/poster/date table
+  - `Announcements/AddAnnouncement.tsx` — post (general or per class)
+  - `Announcements/EditAnnouncement.tsx` — edit announcement
 - **Teacher** (role: teacher): `Dashboard.tsx` — teacher info card + subjects list
-- **Student** (role: student): `Dashboard.tsx` — student info + class card + subjects list
+- **Student** (role: student): `Dashboard.tsx` — student info + class card + subjects list + scores card + announcements card
 - **Shared**: `Sidebar.tsx` (role-based nav links), `DashboardLayout.tsx`, `Button.tsx`, `StatusBadge.tsx`, `PlaceholderPage.tsx`
-- **API layer**: `api/axios.ts`, `api/classes.ts`, `api/students.ts`, `api/teachers.ts`, `api/subjects.ts`, `api/dashboard.ts`, `api/attendance.ts`, `api/homework.ts`
-- **Types**: `types/index.ts` (Role, User, Teacher, SchoolClass, ClassInput, Student, StudentInput, StudentClassSummary, Subject, SubjectInput, TeacherSummary, ClassSummary, SubjectFull, DashboardStats, AttendanceStatus, AttendanceItem, AttendancePayload, AttendanceRecord, AttendanceSummary, Homework, HomeworkInput)
+- **API layer**: `api/axios.ts`, `api/classes.ts`, `api/students.ts`, `api/teachers.ts`, `api/subjects.ts`, `api/dashboard.ts`, `api/attendance.ts`, `api/homework.ts`, `api/scores.ts`, `api/leaderboard.ts`, `api/announcements.ts`
+- **Types**: `types/index.ts` (Role, User, Teacher, SchoolClass, ClassInput, Student, StudentInput, StudentClassSummary, Subject, SubjectInput, TeacherSummary, ClassSummary, SubjectFull, DashboardStats, AttendanceStatus, AttendanceItem, AttendancePayload, AttendanceRecord, AttendanceSummary, Homework, HomeworkInput, Score, ScoreInput, StudentSummary, ScoreFull, LeaderboardEntry, LeaderboardResponse, Announcement, AnnouncementInput, AnnouncementPoster)
 
 ### Sidebar nav links (management)
 
-Dashboard, Students, Teachers, Classes, **Subjects**, **Attendance**, **Homework** (Subjects added 2026-09-03, Attendance added 2026-09-04, Homework added 2026-09-04).
+Dashboard, Students, Teachers, Classes, Subjects, Attendance, Homework, Scores, Leaderboard, **Announcements** (Subjects added 2026-09-03, Attendance added 2026-09-04, Homework added 2026-09-04, Scores added 2026-09-05, Leaderboard added 2026-09-05, Announcements added 2026-09-05).
 
 ## Code Style
 
@@ -336,25 +352,118 @@ Dashboard, Students, Teachers, Classes, **Subjects**, **Attendance**, **Homework
   We update this journal daily as new features land; re-render any new/changed diagrams as PNGs.
 - **Docs folder**: `docs/diagrams/` is new — keep diagrams in sync when the journal changes.
 
-## Work Completed (2026-09-05)
+## Work Completed (2026-09-05, Afternoon) — Scores Module
 
 ### Backend (classEase/)
 
 | File | Change | Type |
 |---|---|---|
-| `app\Http\Controllers\TeacherController.php` | Added missing `use App\Models\Subject;` — `getTeacherSubjects()` referenced `Subject` without the import (fatal "Class Subject not found") | Fix |
+| `database\migrations\2026_09_05_000001_create_scores_table.php` | Created — scores table (student_id, subject_id, class_id, exam_type, marks_obtained, total_marks, unique [student_id, subject_id, exam_type]) | Feature |
+| `app\Models\Score.php` | Created — model with student/subject/class belongsTo relations | Feature |
+| `app\Http\Controllers\ScoreController.php` | Created — addScore, getScore, getScoresByClass, getStudentScores, updateScore, deleteScore. 409 on composite duplicate. Eager-loads safe columns only (no password/user_id) | Feature |
+| `routes\api.php` | Added 6 scores routes under auth:sanctum | Feature |
 
 ### Frontend (client/)
 
 | File | Change | Type |
 |---|---|---|
-| `src\pages\management\Students\StudentSubjects.tsx` | Created — shows a student's subjects (student info header + subject/class/teacher table) at `/management/students/:id/subjects` | Feature |
-| `src\pages\management\Teachers\TeacherSubjects.tsx` | Created — shows a teacher's subjects (teacher info header + subject/class table) at `/management/teachers/:id/subjects` | Feature |
-| `src\routes\AppRouter.tsx` | Added `/management/teachers/:id/subjects` and `/management/students/:id/subjects` routes + imports | Feature |
-| `src\pages\management\Students\StudentsByClass.tsx` | Added "Subjects" action per student row (navigates to subjects view) | Feature |
-| `src\pages\management\Teachers\TeacherList.tsx` | Added "Subjects" action per teacher row (navigates to subjects view) | Feature |
+| `src\api\scores.ts` | Created — createScore, getScore, updateScore, deleteScore, getScoresByClass, getStudentScores | Feature |
+| `src\types\index.ts` | Added Score, ScoreInput, StudentSummary, ScoreFull types | Feature |
+| `src\pages\management\Scores\ScoresByClass.tsx` | Created — scores by class with exam filter, marks + % table, Edit/Delete | Feature |
+| `src\pages\management\Scores\AddScore.tsx` | Created — record score (class → subject → student cascade filters, exam select) | Feature |
+| `src\pages\management\Scores\EditScore.tsx` | Created — edit score (state prefill or fetch by id) | Feature |
+| `src\pages\management\Scores\exams.ts` | Created — shared EXAM_TYPES constant (Unit Test / Midterm Exam / Final Exam) | Feature |
+| `src\routes\AppRouter.tsx` | Added `/management/scores`, `/management/scores/new`, `/management/scores/:id/edit` routes + imports | Feature |
+| `src\components\Sidebar.tsx` | Added Scores link under management | Feature |
+| `src\pages\student\Dashboard.tsx` | Added "Your Scores" card (subject, exam, marks, %) | Feature |
 
-### Verification (2026-09-05)
+### Docs
+
+| File | Change | Type |
+|---|---|---|
+| `ClassEase_Project_Journal.md` | Added Module 9 (Scores), Scores API table, page structure, Day 7 progress, navigation flow updated, Phase 2 scores marked done | Docs |
+| `docs\diagrams\6-navigation-flow.png` | Re-rendered via mermaid.ink after nav flow added Scores/Subjects nodes | Docs |
+
+### Verification (2026-09-05, Afternoon)
+
+| Check | Command | Result |
+|---|---|---|
+| Client build (tsc + vite) | `npm run build` (from `client/`) | PASS |
+| JS lint (classEase) | `npm run lint:check` | PASS |
+| JS format (classEase) | `npm run format:check` | PASS |
+| JS types (classEase) | `npm run types:check` | PASS |
+| PHP lint (Pint, full) | `vendor\bin\pint --test` | PASS |
+| PHPStan / tests | `docker exec phpverif ...` | Docker unavailable (na) |
+
+## Work Completed (2026-09-05, Afternoon Part 2) — Leaderboard Module
+
+### Backend (classEase/)
+
+| File | Change | Type |
+|---|---|---|
+| `app\Http\Controllers\LeaderboardController.php` | Created — ranks students per class by overall average %, optional `?exam=` filter, no new table | Feature |
+| `routes\api.php` | Added 1 leaderboard route under auth:sanctum | Feature |
+
+### Frontend (client/)
+
+| File | Change | Type |
+|---|---|---|
+| `src\api\leaderboard.ts` | Created — getLeaderboardByClass | Feature |
+| `src\types\index.ts` | Added LeaderboardEntry, LeaderboardResponse | Feature |
+| `src\pages\management\Leaderboard\LeaderboardByClass.tsx` | Created — class/exam selectors, ranked table, top-3 medal badges | Feature |
+| `src\routes\AppRouter.tsx` | Added `/management/leaderboard` route + import | Feature |
+| `src\components\Sidebar.tsx` | Added Leaderboard link | Feature |
+
+### Docs
+
+| File | Change | Type |
+|---|---|---|
+| `ClassEase_Project_Journal.md` | Added Module 10 (Leaderboard), Leaderboard API table, page tree + nav flow nodes, Day 7 leaderboard progress, Phase 2 leaderboard marked done | Docs |
+| `docs\diagrams\6-navigation-flow.png` | Re-rendered via mermaid.ink after nav flow added Leaderboard node | Docs |
+
+### Verification (2026-09-05, Afternoon Part 2)
+
+| Check | Command | Result |
+|---|---|---|
+| Client build (tsc + vite) | `npm run build` (from `client/`) | PASS |
+| JS lint (classEase) | `npm run lint:check` | PASS |
+| JS format (classEase) | `npm run format:check` | PASS |
+| JS types (classEase) | `npm run types:check` | PASS |
+| PHP lint (Pint, full) | `vendor\bin\pint --test` | PASS |
+| PHPStan / tests | `docker exec phpverif ...` | Docker unavailable (na) |
+
+## Work Completed (2026-09-05, Afternoon Part 3) — Announcements Module
+
+### Backend (classEase/)
+
+| File | Change | Type |
+|---|---|---|
+| `database\migrations\2026_09_05_000002_create_announcements_table.php` | Created — announcements (nullable class_id = general, posted_by → users nullOnDelete) | Feature |
+| `app\Models\Announcement.php` | Created — class + poster belongsTo relations | Feature |
+| `app\Http\Controllers\AnnouncementController.php` | Created — create/list/all/by-class/by-student/get/update/delete | Feature |
+| `routes\api.php` | Added 7 announcement routes (specific routes before `/{id}`), import order fixed | Feature |
+
+### Frontend (client/)
+
+| File | Change | Type |
+|---|---|---|
+| `src\api\announcements.ts` | Created — all announcement API functions | Feature |
+| `src\types\index.ts` | Added Announcement, AnnouncementInput, AnnouncementPoster | Feature |
+| `src\pages\management\Announcements\AnnouncementList.tsx` | Created — audience filter (all / class), title/audience/poster/date table, Edit/Delete | Feature |
+| `src\pages\management\Announcements\AddAnnouncement.tsx` | Created — post announcement (general or per class) | Feature |
+| `src\pages\management\Announcements\EditAnnouncement.tsx` | Created — edit announcement (state prefill or fetch) | Feature |
+| `src\routes\AppRouter.tsx` | Added `/management/announcements`, `/new`, `/:id/edit` routes | Feature |
+| `src\components\Sidebar.tsx` | Added Announcements link | Feature |
+| `src\pages\student\Dashboard.tsx` | Added Announcements card (own class + general) | Feature |
+
+### Docs
+
+| File | Change | Type |
+|---|---|---|
+| `ClassEase_Project_Journal.md` | Added Module 11, Announcements API table, page tree + nav nodes, Day 7 progress, Phase 2 announcements marked done | Docs |
+| `docs\diagrams\6-navigation-flow.png` | Re-rendered via mermaid.ink after nav flow added Announcements node | Docs |
+
+### Verification (2026-09-05, Afternoon Part 3)
 
 | Check | Command | Result |
 |---|---|---|
@@ -377,6 +486,9 @@ Dashboard, Students, Teachers, Classes, **Subjects**, **Attendance**, **Homework
 - ~~**Student portal** — Replace `student/Dashboard.tsx` placeholder with student's class/subjects~~ **DONE (2026-09-04)**
 - ~~**Attendance** — Mark daily attendance per class~~ **DONE (2026-09-04)**
 - ~~**Homework** — Teachers assign homework, students view~~ **DONE (2026-09-04)**
+- ~~**Scores** — Track student marks per subject per exam~~ **DONE (2026-09-05)**
+- ~~**Leaderboard** — Rank students by performance in a class~~ **DONE (2026-09-05)**
+- ~~**Announcements** — Post announcements to a class or everyone~~ **DONE (2026-09-05)**
 
 ### Medium priority
 - ~~**Class edit** — Add Edit button to `ClassList.tsx`.~~ **DONE (before 2026-09-05)** — `ClassForm.tsx`
@@ -387,7 +499,7 @@ Dashboard, Students, Teachers, Classes, **Subjects**, **Attendance**, **Homework
   — `TeacherSubjects.tsx` at `/management/teachers/:id/subjects`, linked from `TeacherList.tsx`.
 
 ### Not yet started
-- Announcements, Timetable, Scores/Performance, Leaderboard, Concerns
+- Timetable, Concerns
 
 ## Build order for remaining features
-Scores → Leaderboard → Announcements → Timetable → Concerns
+Timetable → Concerns
