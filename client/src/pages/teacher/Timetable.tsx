@@ -1,0 +1,334 @@
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { getTeacherMe, getTeacherSubjects } from '@/api/teachers';
+import { getSubjectsByClass } from '@/api/subjects';
+import {
+    getTimetableByClass,
+    getTimetableByTeacher,
+    saveTimetable,
+} from '@/api/timetable';
+import TimetableView from '@/components/TimetableView';
+import Button from '@/components/Button';
+import type {
+    ClassSummary,
+    SubjectFull,
+    TimetableDay,
+    TimetableSlot,
+    TimetableByTeacherEntry,
+    TimetableSlotInput,
+} from '@/types';
+
+const DAYS: TimetableDay[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const DEFAULT_PERIODS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
+
+type Grid = Record<TimetableDay, Record<string, number | ''>>;
+
+const classesFromSubjects = (subjects: SubjectFull[]): ClassSummary[] => {
+    const map = new Map<number, ClassSummary>();
+    subjects.forEach((s) => {
+        map.set(
+            s.classId,
+            s.class ?? { id: s.classId, class_name: `Class ${s.classId}` },
+        );
+    });
+    return Array.from(map.values());
+};
+
+const emptyGrid = (periods: string[]): Grid => {
+    const subjectMap = {} as Record<string, number | ''>;
+    periods.forEach((p) => (subjectMap[p] = ''));
+
+    const grid = {} as Grid;
+    DAYS.forEach((d) => (grid[d] = { ...subjectMap }));
+    return grid;
+};
+
+export default function TeacherTimetable() {
+    const { user } = useAuth();
+    const [teacherId, setTeacherId] = useState<number | null>(null);
+    const [classes, setClasses] = useState<ClassSummary[]>([]);
+    const [classId, setClassId] = useState('');
+    const [periods, setPeriods] = useState<string[]>(DEFAULT_PERIODS);
+    const [grid, setGrid] = useState<Grid>(emptyGrid(DEFAULT_PERIODS));
+    const [classSubjects, setClassSubjects] = useState<SubjectFull[]>([]);
+    const [myPeriods, setMyPeriods] = useState<TimetableByTeacherEntry[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [loadingClass, setLoadingClass] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!user) return;
+
+        getTeacherMe()
+            .then((res) => {
+                setTeacherId(res.data.id);
+                return getTeacherSubjects(res.data.id);
+            })
+            .then((res) => {
+                const derived = classesFromSubjects(res.data.subjects);
+                setClasses(derived);
+                if (derived.length > 0) {
+                    setClassId(String(derived[0].id));
+                }
+            })
+            .catch(() => setError("Couldn't load your classes."))
+            .finally(() => setLoading(false));
+    }, [user]);
+
+    useEffect(() => {
+        if (teacherId === null) return;
+        getTimetableByTeacher(teacherId)
+            .then((res) => setMyPeriods(res.data.timetable))
+            .catch(() => {});
+    }, [teacherId]);
+
+    useEffect(() => {
+        if (!classId) {
+            setClassSubjects([]);
+            setGrid(emptyGrid(DEFAULT_PERIODS));
+            setPeriods(DEFAULT_PERIODS);
+            return;
+        }
+
+        setLoadingClass(true);
+        setError(null);
+
+        Promise.all([getSubjectsByClass(Number(classId)), getTimetableByClass(Number(classId))])
+            .then(([subjectsRes, timetableRes]) => {
+                setClassSubjects(subjectsRes.data.subjects);
+                const slots = timetableRes.data.timetable;
+                const nextPeriods =
+                    slots.length > 0
+                        ? Array.from(new Set(slots.map((s) => s.period))).sort(
+                              (a, b) => parseInt(a, 10) - parseInt(b, 10),
+                          )
+                        : DEFAULT_PERIODS;
+                const nextGrid = emptyGrid(nextPeriods);
+                slots.forEach((slot) => {
+                    if (nextGrid[slot.day] && nextGrid[slot.day][slot.period] !== undefined) {
+                        nextGrid[slot.day][slot.period] = slot.subject_id ?? '';
+                    }
+                });
+
+                setPeriods(nextPeriods);
+                setGrid(nextGrid);
+            })
+            .catch(() => setError("Couldn't load timetable."))
+            .finally(() => setLoadingClass(false));
+    }, [classId]);
+
+    const updateCell = (day: TimetableDay, period: string, subjectId: number | '') => {
+        setGrid((g) => ({ ...g, [day]: { ...g[day], [period]: subjectId } }));
+    };
+
+    const addPeriod = () => {
+        const nextNum = periods.length + 1;
+        const label = `${nextNum}${nextNum === 1 ? 'st' : nextNum === 2 ? 'nd' : nextNum === 3 ? 'rd' : 'th'}`;
+        const nextPeriods = [...periods, label];
+        setPeriods(nextPeriods);
+        setGrid((g) => {
+            const next = { ...g };
+            DAYS.forEach((d) => (next[d] = { ...next[d], [label]: '' }));
+            return next;
+        });
+    };
+
+    const removeLastPeriod = () => {
+        if (periods.length <= 1) return;
+        const last = periods[periods.length - 1];
+        const nextPeriods = periods.slice(0, -1);
+        setPeriods(nextPeriods);
+        setGrid((g) => {
+            const next = { ...g };
+            DAYS.forEach((d) => {
+                const { [last]: _removed, ...rest } = next[d];
+                next[d] = rest;
+            });
+            return next;
+        });
+    };
+
+    const buildSlots = (): TimetableSlotInput[] =>
+        periods.flatMap((period) =>
+            DAYS.map((day) => ({
+                day,
+                period,
+                subject_id: grid[day][period] === '' ? null : Number(grid[day][period]),
+                teacher_id: null,
+                start_time: null,
+                end_time: null,
+            })),
+        );
+
+    const handleSave = async () => {
+        if (!classId) {
+            setMessage(null);
+            setError('Select a class first.');
+            return;
+        }
+        setSaving(true);
+        setMessage(null);
+        setError(null);
+        try {
+            await saveTimetable({
+                class_id: Number(classId),
+                slots: buildSlots(),
+            });
+            setMessage(`Timetable saved for ${periods.length} periods.`);
+            if (teacherId !== null) {
+                getTimetableByTeacher(teacherId)
+                    .then((res) => setMyPeriods(res.data.timetable))
+                    .catch(() => {});
+            }
+        } catch {
+            setError('Failed to save timetable.');
+            setMessage(null);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div>
+            <div>
+                <h1 className="text-2xl font-semibold text-ink2">My Timetable</h1>
+                <p className="mt-1 text-sm text-muted">
+                    Set the weekly schedule for the classes you teach
+                </p>
+            </div>
+
+            {loading && <p className="mt-6 text-sm text-muted">Loading...</p>}
+            {error && (
+                <p className="mt-6 rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>
+            )}
+
+            {!loading && classes.length === 0 && (
+                <div className="mt-6 rounded-lg border border-border bg-surface p-10 text-center">
+                    <p className="text-sm font-medium text-ink2">No classes assigned</p>
+                    <p className="mt-1 text-sm text-muted">
+                        You need subjects assigned to a class before you can set its timetable.
+                    </p>
+                </div>
+            )}
+
+            {!loading && classes.length > 0 && (
+                <div>
+                    <label className="mt-6 flex max-w-xs flex-col gap-1.5 text-sm">
+                        <span className="font-medium text-ink2">Class</span>
+                        <select
+                            value={classId}
+                            onChange={(e) => setClassId(e.target.value)}
+                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        >
+                            <option value="">Select a class</option>
+                            {classes.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.class_name}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+
+                    {message && (
+                        <p className="mt-4 rounded-md bg-green-100 px-3 py-2 text-sm text-green-800">
+                            {message}
+                        </p>
+                    )}
+
+                    {loadingClass && (
+                        <p className="mt-6 text-sm text-muted">Loading timetable...</p>
+                    )}
+
+                    {!loadingClass && classId && (
+                        <div className="mt-5">
+                            <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-base text-xs uppercase tracking-wide text-muted">
+                                        <tr>
+                                            <th className="whitespace-nowrap px-4 py-3 font-medium">Period</th>
+                                            {DAYS.map((d) => (
+                                                <th key={d} className="whitespace-nowrap px-4 py-3 font-medium">
+                                                    {d}
+                                                </th>
+                                            ))}
+                                            <th className="px-4 py-3"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border">
+                                        {periods.map((period) => (
+                                            <tr key={period}>
+                                                <td className="whitespace-nowrap px-4 py-2 text-muted">
+                                                    <span className="font-medium text-ink2">{period}</span>{' '}
+                                                    period
+                                                </td>
+                                                {DAYS.map((day) => (
+                                                    <td key={day} className="px-2 py-2">
+                                                        <select
+                                                            value={
+                                                                grid[day][period] === undefined ? '' : grid[day][period]
+                                                            }
+                                                            onChange={(e) =>
+                                                                updateCell(
+                                                                    day,
+                                                                    period,
+                                                                    e.target.value === ''
+                                                                        ? ''
+                                                                        : Number(e.target.value),
+                                                                )
+                                                            }
+                                                            className="w-40 rounded-md border border-border px-2 py-1.5 text-sm outline-none focus:border-ink"
+                                                        >
+                                                            <option value="">—</option>
+                                                            {classSubjects.map((s) => (
+                                                                <option key={s.id} value={s.id}>
+                                                                    {s.subjectName}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </td>
+                                                ))}
+                                                <td className="px-2 py-2"></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap items-center gap-3">
+                                <Button type="button" variant="secondary" onClick={addPeriod}>
+                                    + Add period
+                                </Button>
+                                <Button type="button" variant="secondary" onClick={removeLastPeriod}>
+                                    − Remove last period
+                                </Button>
+                                <Button type="button" onClick={handleSave} disabled={saving}>
+                                    {saving ? 'Saving...' : 'Save timetable'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {!loadingClass && !classId && (
+                        <div className="mt-6 rounded-lg border border-border bg-surface p-10 text-center">
+                            <p className="text-sm font-medium text-ink2">
+                                Select a class to view its timetable
+                            </p>
+                            <p className="mt-1 text-sm text-muted">
+                                Then set the subject for each period and day.
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="mt-10">
+                        <h2 className="text-sm font-medium text-muted">Your periods this week</h2>
+                        <div className="mt-3">
+                            <TimetableView slots={myPeriods as TimetableSlot[]} />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
