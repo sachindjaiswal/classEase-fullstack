@@ -7,9 +7,14 @@
 
 ## Project at a Glance
 
+> **PATH RESTRUCTURE (2026-09-10):** the Laravel backend moved from `classEase/` to **`Backend/`**
+> (commit `085db86 "Changed the project structure"`). `client/` is unchanged.
+> `docker-compose.yml` bind-mounts were updated to `./Backend` (app, queue, nginx). All other
+> references to `classEase/` below pre-date this rename and mean the backend dir `Backend/`.
+
 Two separate apps in one repo:
 
-- **`classEase/`** — Laravel 13 backend with Inertia.js/React. Primary app. Runs on
+- **`Backend/`** (was `classEase/`) — Laravel 13 backend with Inertia.js/React. Primary app. Runs on
   `http://localhost:8000` via `php artisan serve` (local SQLite `.env`).
 - **`client/`** — Standalone React SPA (React Router, not Inertia). Runs on
   `http://localhost:5173`. Proxies `/api/*` to the Laravel backend (Vite dev server).
@@ -219,9 +224,12 @@ Services (`docker-compose.yml` at repo root):
 
 - `User` — `app/Models/User.php`. fillable: name, email, password, **role**. Uses PHP attributes
   `#[Fillable]`/`#[Hidden]` (Laravel 12+ feature) + `$fillable`/`$hidden` arrays. `hasOne` Student, Teacher.
-  **`SoftDeletes`** (added 2026-09-07 — deleting a student/teacher revokes their login; since
-  2026-09-07#2 the linked User is **force-deleted** so the email is reusable, while the
-  student/teacher row stays soft-deleted for the record).
+  **`SoftDeletes`** (added 2026-09-07). **Delete = permanent (2026-09-10):** `deleteStudent`/`deleteTeacher`
+  now `forceDelete()` both the row and its linked User inside a transaction, so no soft-deleted row can
+  keep blocking email reuse; `addStudent`/`createTeacher` additionally purge any leftover soft-deleted
+  rows holding that email before creating. (Previously the student/teacher row was soft-deleted for the
+  record, but the `students.user_id`/`teachers.user_id` FK is `cascadeOnDelete` anyway, so force-deleting
+  the User hard-deletes the row + its scores/attendance/concerns too.)
 - `teacher.php` — **file is lowercase `teacher.php`**, class `Teacher`. `SoftDeletes`.
   snake_case columns: `first_name`, `middle_name`, `surname`, `contact`, `designation`,
   `monthly_salary` (int). `belongsTo` User; `hasMany` classes (via `class_teacher`), subjects (via `teacherId`).
@@ -261,7 +269,7 @@ reads the trait `@use` tag on the use-clause PHPDoc).
   password = the entered password, linked via `user_id`, in a transaction). Email is unique across both `students` and `users`.
   `updateStudent` syncs the linked User's name/email and password (blank keeps current); creates the login when none exists
   yet (legacy students) if a password is supplied. `deleteStudent` soft-deletes the linked User, revoking the login.
-- `TeacherController` — `getAllTeachers`, `getTeacher`, `getTeacherMe` (authenticated user's own teacher profile via `user->teacher` — needed because teacher id ≠ user id), `createTeacher`, `updateTeacher`, `deleteTeacher`.
+- `TeacherController` — `getAllTeachers` (ordered by `id` for deterministic listing), `getTeacher`, `getTeacherMe` (authenticated user's own teacher profile via `user->teacher` — needed because teacher id ≠ user id), `createTeacher`, `updateTeacher`, `deleteTeacher`.
   `getTeacherSubjects` ($id) — subject list for a teacher. **Login accounts (2026-09-07)**: `createTeacher` now requires a
   `password` (min 6) and creates a `User` (role `teacher`, same email, linked `user_id`, in a transaction). Email unique across
   `teachers` and `users`. `updateTeacher` syncs the linked User's name/email and password (blank keeps current); `deleteTeacher`
@@ -273,7 +281,7 @@ reads the trait `@use` tag on the use-clause PHPDoc).
 - `ScoreController` — `addScore`, `getScore`, `getScoresByClass`, `getStudentScores`, `updateScore`, `deleteScore`. Eager-loads only safe columns (student password/user_id never exposed). Accepts `semester` (default field); duplicate (student_id, subject_id, exam_type, semester) → 409.
 - `LeaderboardController` — `getLeaderboardByClass` — ranks students in a class by overall average percentage (sum marks_obtained / sum total_marks), optional `?exam=` **and `?semester=`** (default `'current'`) filters, computed on the fly from scores (no new table). Returns `semester`. Class case fixed (`use App\Models\classes;`).
 - `AnnouncementController` — `createAnnouncement`, `getAnnouncements`, `getAnnouncementsByClass` (class + general), `getAnnouncement`, `updateAnnouncement`, `deleteAnnouncement`, `getAnnouncementsByStudent`. Routes ordered so `/announcements/class|student/{...}` precede `/announcements/{id}`. Eager-loads `class` + `poster` (user: id, name only).
-- `TimetableController` — `saveTimetable` (bulk upsert a class's full grid: deletes removed (day, period) slots then updateOrCreate each submitted slot; teacher_id auto-fills from the subject if omitted), `getTimetableByClass`, `getTimetableByTeacher` (entries where teacher_id matches), `updateTimetable`, `deleteTimetable`. `DAYS` const = Monday–Friday.
+- `TimetableController` — `saveTimetable` (bulk upsert a class's full grid: deletes removed (day, period) slots then updateOrCreate each submitted slot; teacher_id auto-fills from the subject if omitted), `getTimetableByClass`, `getTimetableByTeacher` (entries where teacher_id matches), `updateTimetable`, `deleteTimetable`. `DAYS` const = Monday–Friday. **Teacher double-booking guard (2026-09-11)**: before writing, `saveTimetable`/`updateTimetable` reject (409) any slot whose resolved teacher already teaches in another class at the same day+period — "a teacher can't teach two classes at the same time" (helper `teacherConflict`/`teacherConflictFor`; `updateTimetable` also auto-fills teacher from subject when omitted so the check and stored entry stay consistent). Client Timetable pages (management + teacher) now surface the backend `message` instead of a generic failure.
 - `ConcernController` — `createConcern` (student raises; student_id resolved from the authenticated user's `user_id`, status forced `open`), `getConcerns` (all, newest first), `getConcernsByStudent`, `getConcern`, `updateConcern` (status + admin_reply; auto-sets `resolved_by` when resolving, clears it otherwise), `deleteConcern`. Students are scoped to their own concerns via `isStudentForbidden` (403 otherwise).
 - `ComparisonController` — `bySubject` (`GET /comparison/subject/{classId}/{subjectId}`, optional `?exam=&semester=`), `gaps` (per-subject gap to top-3 avg & class avg, sorted desc), `progress` (current vs latest other semester per subject + summary), `headToHead` (`GET /comparison/headtohead/{studentA}/{studentB}` — per-subject A% vs B%, delta, leader, wins summary; students must be one of the pair **and same class**, admin/teacher any two). Students can only access their own `gaps`/`progress` via `isStudentForbidden`; admin/teacher any student. Uses flat Eloquent `Collection<int, Score>` + `@param` docblocks for PHPStan.
 - `Resources/ClassesResource.php` — has `@property-read` docblock.

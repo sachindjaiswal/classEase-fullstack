@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getSubjects, deleteSubject } from '@/api/subjects';
-import type { Subject } from '@/types';
+import type { SubjectFull } from '@/types';
 import Button from '@/components/Button';
 
 export default function SubjectList() {
-    const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [subjects, setSubjects] = useState<SubjectFull[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
@@ -81,10 +81,14 @@ export default function SubjectList() {
                                             {s.subjectName}
                                         </td>
                                         <td className="whitespace-nowrap px-5 py-3 text-muted">
-                                            {s.classId}
+                                            {s.class ? s.class.class_name : '—'}
                                         </td>
                                         <td className="whitespace-nowrap px-5 py-3 text-muted">
-                                            {s.teacherId ?? <span className="italic text-muted/60">Unassigned</span>}
+                                            {s.teacher ? (
+                                                `${s.teacher.first_name} ${s.teacher.surname}`
+                                            ) : (
+                                                <span className="italic text-muted/60">Unassigned</span>
+                                            )}
                                         </td>
                                         <td className="whitespace-nowrap px-5 py-3 text-right">
                                             <button

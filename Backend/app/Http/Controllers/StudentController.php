@@ -34,6 +34,9 @@ class StudentController extends Controller
         ]);
 
         DB::transaction(function () use ($validated) {
+            Student::onlyTrashed()->where('email', $validated['email'])->forceDelete();
+            User::onlyTrashed()->where('email', $validated['email'])->forceDelete();
+
             $user = User::create([
                 'name' => trim(implode(' ', array_filter([
                     $validated['firstName'],
@@ -213,9 +216,15 @@ class StudentController extends Controller
             return response()->json(['message' => 'Student not found'], 404);
         }
 
-        $student->user?->forceDelete();
+        $userId = $student->user_id;
 
-        $student->delete();
+        DB::transaction(function () use ($student, $userId) {
+            $student->forceDelete();
+
+            if ($userId) {
+                User::withoutGlobalScopes()->where('id', $userId)->forceDelete();
+            }
+        });
 
         return response()->json([
             'message' => 'Student deleted successfully',

@@ -58,6 +58,16 @@ class TimetableController extends Controller
             ->map(fn (Timetable $entry) => $entry->day.'|'.$entry->period)
             ->all();
 
+        $conflict = $this->teacherConflict($classId, $slots);
+
+        if ($conflict) {
+            return response()->json([
+                'message' => "{$conflict['teacher_name']} already has a ".$conflict['period'].' '.
+                    'period lecture on '.$conflict['day'].' in '.$conflict['conflict_class'].
+                    ' — a teacher can\'t teach two classes at the same time.',
+            ], 409);
+        }
+
         foreach (array_diff($existingKey, $submittedKey) as $key) {
             [$existingDay, $period] = explode('|', $key, 2);
 
@@ -143,6 +153,35 @@ class TimetableController extends Controller
             'end_time' => ['nullable', 'date_format:H:i'],
         ]);
 
+        $day = $validated['day'] ?? $entry->day;
+        $period = $validated['period'] ?? $entry->period;
+        $subjectId = $validated['subject_id'] ?? $entry->subject_id;
+        $subject = $subjectId !== null ? Subject::whereKey($subjectId)->first() : null;
+        $subjectTeacherId = $subject !== null ? $subject->teacherId : null;
+        $teacherId = isset($validated['teacher_id'])
+            ? (int) $validated['teacher_id']
+            : ($subjectTeacherId ?? $entry->teacher_id);
+
+        if (! isset($validated['teacher_id']) && $teacherId !== null) {
+            $validated['teacher_id'] = $teacherId;
+        }
+
+        $conflict = $this->teacherConflictFor(
+            $entry->class_id,
+            $entry->id,
+            $day,
+            $period,
+            $teacherId,
+        );
+
+        if ($conflict) {
+            return response()->json([
+                'message' => "{$conflict['teacher_name']} already has a ".$period.' '.
+                    'period lecture on '.$day.' in '.$conflict['conflict_class'].
+                    ' — a teacher can\'t teach two classes at the same time.',
+            ], 409);
+        }
+
         $entry->update($validated);
 
         return response()->json([
@@ -164,6 +203,81 @@ class TimetableController extends Controller
         return response()->json([
             'message' => 'Timetable entry deleted successfully',
         ], 200);
+    }
+
+    /**
+     * Check that no teacher is double-booked at the same day+period across classes.
+     *
+     * @param  array<int, array<string, mixed>>  $slots
+     * @return array{teacher_name: string, day: string, period: string, conflict_class: string}|null
+     */
+    private function teacherConflict(int $classId, array $slots): ?array
+    {
+        foreach ($slots as $slot) {
+            $subjectId = $slot['subject_id'] ?? null;
+            $teacherId = isset($slot['teacher_id']) ? (int) $slot['teacher_id'] : null;
+
+            if ($teacherId === null && $subjectId !== null) {
+                $teacherId = Subject::whereKey($subjectId)->first()?->teacherId;
+            }
+
+            if ($teacherId === null) {
+                continue;
+            }
+
+            $conflict = $this->teacherConflictFor(
+                $classId,
+                null,
+                $slot['day'],
+                $slot['period'],
+                $teacherId,
+            );
+
+            if ($conflict) {
+                return $conflict;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Find another class where the given teacher is already scheduled for the
+     * given day+period. Pass an entry id to exclude the row being updated.
+     *
+     * @return array{teacher_name: string, day: string, period: string, conflict_class: string}|null
+     */
+    private function teacherConflictFor(
+        int $classId,
+        ?int $ignoreEntryId,
+        string $day,
+        string $period,
+        ?int $teacherId,
+    ): ?array {
+        if ($teacherId === null) {
+            return null;
+        }
+
+        $entry = Timetable::with('class')
+            ->where('teacher_id', $teacherId)
+            ->where('day', $day)
+            ->where('period', $period)
+            ->where('class_id', '!=', $classId)
+            ->when($ignoreEntryId !== null, fn ($query) => $query->where('id', '!=', $ignoreEntryId))
+            ->first();
+
+        if (! $entry) {
+            return null;
+        }
+
+        $teacher = Teacher::find($teacherId);
+
+        return [
+            'teacher_name' => $teacher ? trim($teacher->first_name.' '.$teacher->surname) : "Teacher #{$teacherId}",
+            'day' => $day,
+            'period' => $period,
+            'conflict_class' => $entry->class ? $entry->class->class_name : "Class #{$entry->class_id}",
+        ];
     }
 
     /**

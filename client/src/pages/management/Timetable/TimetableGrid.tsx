@@ -138,8 +138,10 @@ export default function TimetableGrid() {
                 slots: buildSlots(day),
             });
             setMessage(`${day}'s schedule saved.`);
-        } catch {
-            setError(`Failed to save ${day}.`);
+        } catch (err) {
+            const message =
+                (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+            setError(message ?? `Failed to save ${day}.`);
             setMessage(null);
         } finally {
             setSavingDay(null);
@@ -163,8 +165,10 @@ export default function TimetableGrid() {
             setMessage(`Timetable saved for ${periods.length} periods.`);
             setError(null);
             return res;
-        } catch {
-            setError('Failed to save timetable.');
+        } catch (err) {
+            const apiMessage =
+                (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+            setError(apiMessage ?? 'Failed to save timetable.');
             setMessage(null);
         } finally {
             setSaving(false);

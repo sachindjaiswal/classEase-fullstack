@@ -15,7 +15,7 @@ class TeacherController extends Controller
     // Get all teachers
     public function getAllTeachers(): JsonResponse
     {
-        return response()->json(Teacher::all(), 200);
+        return response()->json(Teacher::orderBy('id')->get(), 200);
     }
 
     // Get one teacher
@@ -66,6 +66,9 @@ class TeacherController extends Controller
         ]);
 
         DB::transaction(function () use ($validated) {
+            Teacher::onlyTrashed()->where('email', $validated['email'])->forceDelete();
+            User::onlyTrashed()->where('email', $validated['email'])->forceDelete();
+
             $user = User::create([
                 'name' => trim(implode(' ', array_filter([
                     $validated['first_name'],
@@ -181,9 +184,15 @@ class TeacherController extends Controller
             ], 404);
         }
 
-        $teacher->user?->forceDelete();
+        $userId = $teacher->user_id;
 
-        $teacher->delete();
+        DB::transaction(function () use ($teacher, $userId) {
+            $teacher->forceDelete();
+
+            if ($userId) {
+                User::withoutGlobalScopes()->where('id', $userId)->forceDelete();
+            }
+        });
 
         return response()->json([
             'message' => 'Teacher deleted successfully',

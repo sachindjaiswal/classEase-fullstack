@@ -182,8 +182,10 @@ export default function TeacherTimetable() {
                     .then((res) => setMyPeriods(res.data.timetable))
                     .catch(() => {});
             }
-        } catch {
-            setError('Failed to save timetable.');
+        } catch (err) {
+            const apiMessage =
+                (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+            setError(apiMessage ?? 'Failed to save timetable.');
             setMessage(null);
         } finally {
             setSaving(false);

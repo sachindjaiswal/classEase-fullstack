@@ -6,6 +6,7 @@ use App\Models\Score;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Teacher;
+use App\Models\Timetable;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
@@ -120,4 +121,57 @@ test('a teacher can save a timetable for a class they teach', function () {
         ->assertJsonCount(1, 'timetable')
         ->assertJsonPath('timetable.0.subject_id', $subject->id)
         ->assertJsonPath('timetable.0.teacher_id', $teacher->id);
+});
+
+test('a teacher cannot be booked for two classes at the same day and period', function () {
+    [$user, $teacher, $classA] = classroomTeacher();
+
+    $classB = classes::create([
+        'class_name' => 'Grade 9',
+        'section' => 'B',
+        'room_no' => '102',
+    ]);
+
+    Subject::create([
+        'classId' => $classB->id,
+        'subjectName' => 'Algebra',
+        'teacherId' => $teacher->id,
+    ]);
+
+    Sanctum::actingAs($user);
+
+    $this->postJson('/api/timetable', [
+        'class_id' => $classA->id,
+        'slots' => [
+            [
+                'day' => 'Monday',
+                'period' => '1st',
+                'subject_id' => Subject::where('classId', $classA->id)->first()->id,
+            ],
+        ],
+    ])->assertOk();
+
+    $this->postJson('/api/timetable', [
+        'class_id' => $classB->id,
+        'slots' => [
+            [
+                'day' => 'Monday',
+                'period' => '1st',
+                'subject_id' => Subject::where('classId', $classB->id)->first()->id,
+            ],
+        ],
+    ])->assertStatus(409);
+
+    expect(Timetable::where('class_id', $classB->id)->count())->toBe(0);
+
+    $this->postJson('/api/timetable', [
+        'class_id' => $classB->id,
+        'slots' => [
+            [
+                'day' => 'Monday',
+                'period' => '2nd',
+                'subject_id' => Subject::where('classId', $classB->id)->first()->id,
+            ],
+        ],
+    ])->assertOk();
 });
