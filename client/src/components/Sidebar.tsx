@@ -10,6 +10,7 @@ const LINKS: Record<string, { to: string; label: string }[]> = {
         { to: '/management/subjects', label: 'Subjects' },
         { to: '/management/timetable', label: 'Timetable' },
         { to: '/management/attendance', label: 'Attendance' },
+        { to: '/management/attendance/appeals', label: 'Attendance Appeals' },
         { to: '/management/homework', label: 'Homework' },
         { to: '/management/scores', label: 'Scores' },
         { to: '/management/leaderboard', label: 'Leaderboard' },
@@ -21,6 +22,7 @@ const LINKS: Record<string, { to: string; label: string }[]> = {
         { to: '/teacher/dashboard', label: 'Dashboard' },
         { to: '/teacher/scores', label: 'Marks' },
         { to: '/teacher/attendance', label: 'Attendance' },
+        { to: '/teacher/attendance/appeals', label: 'Attendance Appeals' },
         { to: '/teacher/homework', label: 'Homework' },
         { to: '/teacher/timetable', label: 'Timetable' },
         { to: '/teacher/announcements', label: 'Announcements' },
@@ -30,6 +32,7 @@ const LINKS: Record<string, { to: string; label: string }[]> = {
     student: [
         { to: '/student/dashboard', label: 'Dashboard' },
         { to: '/student/timetable', label: 'Timetable' },
+        { to: '/student/attendance', label: 'Attendance' },
         { to: '/student/performance', label: 'Performance' },
         { to: '/student/concerns', label: 'Concerns' },
     ],

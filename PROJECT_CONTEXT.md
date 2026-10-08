@@ -3,7 +3,7 @@
 > **This file is the persistent checkpoint.** Read this first every session to re-establish
 > project state. It records what exists, what has been verified, and how to run everything.
 > Keep it in sync with reality after any significant change (new migrations, models, routes,
-> Docker changes, or verified baseline updates). Last verified: **2026-09-08**.
+> Docker changes, or verified baseline updates). Last verified: **2026-10-08**.
 
 ## Project at a Glance
 
@@ -99,17 +99,16 @@ and displayed another student's data — pre-existing bug, now fixed).
 
 ## Git State
 
-- Branch: `main`, HEAD: `46f0e0f` (**merge commit** — parents `c4cc595` + `bc87c2a`).
-- `46f0e0f` integrates `origin/main`'s `bc87c2a` (`feat(subject): subjects CRUD + teacher/student subject routes`)
-  into local main. The 4 conflicted files (StudentController, SubjectController, TeacherController,
-  routes/api.php) were resolved in the working tree and committed with the merge. The local
-  TeacherController fix (`use App\Models\Subject;`) is folded into this merge commit.
-- Branch no longer diverged from `origin/main` (bc87c2a is now an ancestor of HEAD).
-- Still untracked (intentionally): `classEase/composer-setup.php`, plus all work from
-  (2026-09-04/2026-09-05) not yet committed (attendance, homework, dashboards, subjects
-  pages, teacher/student subject views). Also `routes/api.php.tmp` + `run.txt` (junk, untracked).
-- As of 2026-09-06: RBAC API hardening + Timetable module also not yet committed (same
-  un-committed work stream). No git changes made today; working tree uncommitted.
+- Branch: `main`, HEAD: `04706a7` **"Fixed attendance and updated UI"** — the 2026-10-08 attendance
+  appeals backend (migration, model, controller, routes, tests) was committed by the user mid-session.
+- **Remote**: `origin` was **re-pointed 2026-10-08** from `https://github.com/shaikhfarhan10/ClassEase.git`
+  (wrong — "a major mistake per user") to **`https://github.com/sachindjaiswal/classEase-fullstack.git`**.
+  All pushes/pulls now go to the classEase-fullstack repo.
+- **Uncommitted as of 2026-10-08**: `AttendanceCorrectionController.php` (Pint + PHPStan + SQLite-portable
+  `CASE` ordering fixes made after HEAD was committed) + the whole client appeals feature
+  (`types`, `api/attendanceAppeals.ts`, student `Attendance.tsx`, management/teacher `AttendanceAppeals.tsx`,
+  router + sidebar entries).
+- History (commit `04706a7`) sits on top of `fefce97` (`frontend deisgn till 06-09-2026`).
 
 ## Verified Green Baseline (2026-08-19, updated 2026-09-07)
 
@@ -196,9 +195,19 @@ Services (`docker-compose.yml` at repo root):
 ### Docker gotchas
 
 - **`phpverif`** — a one-off container created for verification
-  (`docker compose run --no-deps -d --name phpverif app`). It is running, entrypoint completed,
-  `classease_php-vendor` volume populated. Used for PHPStan + artisan test. Recreate if missing
+  (`docker compose run --no-deps -d --name phpverif app`). Used for PHPStan + artisan test. Recreate if missing
   with the same command (confirm entrypoint finishes before running phpstan).
+- **⚠️ VERIFICATION-ENV DISCOVERY (2026-10-08)**: the existing `phpverif` container and the running Docker
+  stack (`classease-app/client/nginx/queue/mysql`, ports :8080/:5174/:3307/6380) **bind-mount a DIFFERENT
+  project** — `C:\Users\Shaikh Farhan\classEase-fullstack\Backend` + `...\classEase-fullstack\client`
+  (git remote `sachindjaiswal/classEase-fullstack`). They do **NOT** serve `/var/www/html` from this repo, so
+  `docker exec phpverif ...` / `:8080` smoke tests validate the *other* project's code, and newly created
+  files never appear in it (only edits to already-existing files show up). To verify **our** code, use a
+  disposable container that mounts our `classEase/` folder onto the shared `classease-app` image
+  (bypass the entrypoint so nothing is rewritten):
+  `docker run --rm --entrypoint php -v "C:\<abs path>\classEase:/var/www/html" -w /var/www/html classease-app <pint|phpstan|artisan test>`
+  with the SQLite in-memory env overrides for tests (see "Running Tests"). Verified 2026-10-08: Pint PASS
+  (84 files), PHPStan lvl 7 `[OK] No errors`, **30 tests / 110 assertions PASS** (incl. new `AttendanceCorrectionTest` 10).
 - Local `.env` uses SQLite; Docker overrides to MySQL. Don't change local `.env` to MySQL.
 - Ports 3306/6379/80/5173 must be free; local `php artisan serve` on 8000 doesn't conflict.
 - Docker Desktop path: `C:\Program Files\Docker\Docker\Docker Desktop.exe` (daemon v29.4.0).
@@ -1326,4 +1335,47 @@ exactly matches the working tree as of the end of 2026-09-08 — no file was edi
 - Client `npm run build` (tsc + vite, 742 modules) PASS; `classease-client` restarted.
 - Pint `--test` 85 files PASS; PHPStan lvl 7 `[OK] No errors`.
 - `php artisan test` (SQLite in-memory overrides) **27 passed, 116 assertions**.
+
+## Work Completed (2026-10-08) — Attendance appeals (corrections)
+
+**Request**: mirror the `saher-backend` `attendance` correction chronology, adapted to ClassEase's roles:
+admin has full mark/edit/manage; teacher marks present/absent only for classes she teaches; student views
+**only** their own attendance and can appeal a wrong record to the marking teacher (admin can also resolve).
+Design decisions (Q&A): **per-day-per-class** (no lecture/subject column); appeal = **requested status +
+message** (no proof file); handlers = **marking teacher + admin**; teacher class scope **enforced in the
+backend** (not just the UI).
+
+### Backend (classEase/)
+| File | Change | Type |
+|---|---|---|
+| `database/migrations/2026_10_08_000001_create_attendance_corrections_table.php` | `attendance_corrections` — attendance_id (FK→attendances, cascadeOnDelete), student_id (FK→students, cascadeOnDelete), previous_status + requested_status (enum present/absent/late), message (text), status (enum pending/approved/rejected, default pending), response_reason (text nullable), handled_by (FK→users nullable, nullOnDelete), timestamps | Feature |
+| `app/Models/AttendanceCorrection.php` | fillable + PHPDoc relations: `attendance` (BelongsTo), `student` (BelongsTo with student's `firstName`/`surname` via `with` selections), `handler` (BelongsTo User via `handled_by` — mirrors concerns.resolved_by) | Feature |
+| `app/Http/Controllers/AttendanceCorrectionController.php` | `store` (student-only; 403 if record isn't theirs; duplicate pending → 400; snapshots `previous_status`; returns minimal eager-loads), `mine` (student's own), `index` (admin=all; teacher=`whereHas attendance.marked_by == teacherId`; optional `?status=` filter; portable `CASE status …` ordering pending→approved→rejected), `handle` (404/400 not-pending/403 teacher-not-marker; approve → `attendance.status = requested_status`; sets `handled_by` = user id). `Attendance::find((int)…)` cast keeps PHPStan happy (no `|Collection` union) | Feature |
+| `app/Http/Controllers/AttendanceController.php` | Teacher scope **enforced server-side**: `teacherCanMarkClass` (admin passes; teacher must be `class_teacher` OR teach a subject of the class via `Subject.classId+teacherId`), `teacherCanUpdateRecord` (teacher must be the record's `marked_by` + teachable class), `canViewStudent`; applied to `markAttendance`/`getAttendanceByClass`/`getStudentAttendance(Request, int id)`/`updateAttendance` | Feature |
+| `routes/api.php` | `GET /attendance-corrections` + `PUT /attendance-corrections/{id}` (role admin,teacher); `POST /attendance-corrections` + `GET /attendance-corrections/mine` (role student) | Feature |
+| `tests/Feature/AttendanceCorrectionTest.php` | 10 Pest tests via `correctionFixture()` (admin, teacher, otherTeacher, class, subject, 2 students, attendance marked by teacher): own-appeal 201, appeal-another 403, duplicate-pending 400, teacher list scoping, approve updates record, teacher-can't-handle-unmarked 403, admin list + reject, teacher can/can't mark own/foreign class, student can't read other student's attendance | Feature |
+
+### Frontend (client/)
+| File | Change | Type |
+|---|---|---|
+| `src/types/index.ts` | `AttendanceAppealStatus`, `AttendanceAppeal`, `AttendanceAppealStudent/Class`, `AttendanceAppealInput`, `AttendanceAppealUpdateInput` | Feature |
+| `src/api/attendanceAppeals.ts` | `createAttendanceAppeal`, `getMyAttendanceAppeals`, `getAttendanceAppeals(status?)`, `handleAttendanceAppeal` | Feature |
+| `src/pages/student/Attendance.tsx` | NEW `/student/attendance` — own attendance table (date/status pill/remarks) + inline per-record appeal form (status select + reason, pending-appeal rows show "Appeal pending") + "My appeals" list (previous→requested, StatusBadge, handler response) | Feature |
+| `src/pages/management/Attendance/AttendanceAppeals.tsx` | NEW `/management/attendance/appeals` — admin all / teacher only-their-marked (backend-scoped); status filter; table (student/date+class/change/reason/status/raised); pending rows expand to Approve|Reject + optional reply | Feature |
+| `src/pages/teacher/AttendanceAppeals.tsx` | Re-exports the management list (teacher Concerns pattern) at `/teacher/attendance/appeals` | Feature |
+| `src/routes/AppRouter.tsx` + `src/components/Sidebar.tsx` | Routes + sidebar links: management & teacher "Attendance Appeals" (under Attendance), student "Attendance" (after Timetable) | Feature |
+
+### Verification (2026-10-08) — against OUR code (disposable container, see Docker gotchas above)
+- Pint `--test` **84 files PASS** (4 new files auto-fixed by pint first).
+- PHPStan lvl 7 **`[OK] No errors`** (fixed `find(mixed)` → `|Collection` union via `(int)` cast).
+- `php artisan test` (SQLite in-memory) **30 passed, 110 assertions** — 10 new `AttendanceCorrectionTest`
+  + all prior tests green. (MySQL-only `orderByRaw FIELD()` was replaced with a portable `CASE` expression
+  when the first run failed on SQLite.)
+- Client `npm run build` (tsc + vite) **PASS** (746 modules).
+
+### Notes
+- New migration not yet applied to any live MySQL (none exists for our repo — the running :3307 MySQL
+  belongs to the other project). SQLite in-memory tests exercise the schema.
+- Awareness: earlier "phpverif"/:8080 reverifications happened against the *other* project and were
+  misleading; the current baseline above is genuinely **our** repo.
 

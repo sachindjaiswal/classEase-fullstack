@@ -21,6 +21,7 @@ import SubjectList from '@/pages/management/Subjects/SubjectList';
 import SubjectForm from '@/pages/management/Subjects/SubjectForm';
 import MarkAttendance from '@/pages/management/Attendance/MarkAttendance';
 import ViewAttendance from '@/pages/management/Attendance/ViewAttendance';
+import AttendanceAppeals from '@/pages/management/Attendance/AttendanceAppeals';
 import HomeworkList from '@/pages/management/Homework/HomeworkList';
 import AddHomework from '@/pages/management/Homework/AddHomework';
 import EditHomework from '@/pages/management/Homework/EditHomework';
@@ -40,6 +41,7 @@ import TeacherScores from '@/pages/teacher/Scores';
 import TeacherAnnouncements from '@/pages/teacher/Announcements';
 import TeacherConcerns from '@/pages/teacher/Concerns';
 import TeacherMarkAttendance from '@/pages/teacher/MarkAttendance';
+import TeacherAttendanceAppeals from '@/pages/teacher/AttendanceAppeals';
 import TeacherHomeworkList from '@/pages/teacher/Homework/HomeworkList';
 import TeacherAddHomework from '@/pages/teacher/Homework/AddHomework';
 import TeacherEditHomework from '@/pages/teacher/Homework/EditHomework';
@@ -48,6 +50,7 @@ import TeacherClassPerformanceAnalytics from '@/pages/teacher/analytics/ClassPer
 import TeacherAttendanceAnalytics from '@/pages/teacher/analytics/AttendanceAnalytics';
 import StudentDashboard from '@/pages/student/Dashboard';
 import StudentTimetable from '@/pages/student/Timetable';
+import StudentAttendance from '@/pages/student/Attendance';
 import StudentConcerns from '@/pages/student/Concerns';
 import StudentPerformance from '@/pages/student/Performance';
 import StudentSubjectsAnalytics from '@/pages/student/analytics/SubjectsAnalytics';
@@ -89,6 +92,7 @@ export default function AppRouter() {
             <Route path="/management/subjects/:id/edit" element={<SubjectForm />} />
             <Route path="/management/attendance" element={<MarkAttendance />} />
             <Route path="/management/attendance/view" element={<ViewAttendance />} />
+            <Route path="/management/attendance/appeals" element={<AttendanceAppeals />} />
             <Route path="/management/homework" element={<HomeworkList />} />
             <Route path="/management/homework/new" element={<AddHomework />} />
             <Route path="/management/homework/:id/edit" element={<EditHomework />} />
@@ -116,6 +120,7 @@ export default function AppRouter() {
             <Route path="/teacher/timetable" element={<TeacherTimetable />} />
             <Route path="/teacher/scores" element={<TeacherScores />} />
             <Route path="/teacher/attendance" element={<TeacherMarkAttendance />} />
+            <Route path="/teacher/attendance/appeals" element={<TeacherAttendanceAppeals />} />
             <Route path="/teacher/homework" element={<TeacherHomeworkList />} />
             <Route path="/teacher/homework/new" element={<TeacherAddHomework />} />
             <Route path="/teacher/homework/:id/edit" element={<TeacherEditHomework />} />
@@ -133,6 +138,7 @@ export default function AppRouter() {
           <Route element={<DashboardLayout />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/timetable" element={<StudentTimetable />} />
+            <Route path="/student/attendance" element={<StudentAttendance />} />
             <Route path="/student/performance" element={<StudentPerformance />} />
             <Route path="/student/concerns" element={<StudentConcerns />} />
             <Route path="/student/analytics/subjects" element={<StudentSubjectsAnalytics />} />

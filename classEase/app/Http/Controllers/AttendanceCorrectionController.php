@@ -112,7 +112,9 @@ class AttendanceCorrectionController extends Controller
             }
         }
 
-        $corrections = $query->orderByRaw("FIELD(status, 'pending', 'approved', 'rejected'), created_at desc")->get();
+        $corrections = $query->orderByRaw(
+    "CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, created_at desc"
+)->get();
 
         return response()->json([
             'message' => 'Attendance appeals retrieved successfully',

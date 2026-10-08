@@ -173,6 +173,54 @@ export interface AttendanceSummary {
   late: number;
 }
 
+// ── Attendance Appeals ─────────────────────────────────────
+// Backend: app/Http/Controllers/AttendanceCorrectionController
+export type AttendanceAppealStatus = 'pending' | 'approved' | 'rejected';
+
+export interface AttendanceAppeal {
+  id: number;
+  attendance_id: number;
+  student_id: number;
+  previous_status: AttendanceStatus;
+  requested_status: AttendanceStatus;
+  message: string | null;
+  status: AttendanceAppealStatus;
+  response_reason: string | null;
+  handled_by: number | null;
+  created_at: string;
+  updated_at: string;
+  student?: AttendanceAppealStudent | null;
+  attendance?: {
+    id: number;
+    date: string;
+    class?: AttendanceAppealClass | null;
+  } | null;
+  handler?: { id: number; name: string } | null;
+}
+
+export interface AttendanceAppealStudent {
+  id: number;
+  firstName: string;
+  surname: string;
+}
+
+export interface AttendanceAppealClass {
+  id: number;
+  class_name: string;
+  section: string;
+}
+
+export interface AttendanceAppealInput {
+  attendance_id: number;
+  requested_status: AttendanceStatus;
+  message: string;
+}
+
+export interface AttendanceAppealUpdateInput {
+  decision: 'approved' | 'rejected';
+  response_reason?: string | null;
+}
+
 // ── Homework ──────────────────────────────────────────────
 export interface Homework {
   id: number;
