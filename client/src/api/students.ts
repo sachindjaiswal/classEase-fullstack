@@ -7,6 +7,9 @@ export const createStudent = (payload: StudentInput) =>
 export const getStudent = (id: number) =>
   api.get<{ message: string; student: Student }>(`/student/${id}`);
 
+export const getMyStudent = () =>
+  api.get<{ message: string; student: Student }>('/student/me');
+
 export const updateStudent = (id: number, payload: Partial<StudentInput>) =>
   api.put<{ message: string; student: Student }>(`/student/${id}`, payload);
 

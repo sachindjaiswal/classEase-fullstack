@@ -8,14 +8,31 @@ const LINKS: Record<string, { to: string; label: string }[]> = {
         { to: '/management/teachers', label: 'Teachers' },
         { to: '/management/classes', label: 'Classes' },
         { to: '/management/subjects', label: 'Subjects' },
+        { to: '/management/timetable', label: 'Timetable' },
         { to: '/management/attendance', label: 'Attendance' },
         { to: '/management/homework', label: 'Homework' },
         { to: '/management/scores', label: 'Scores' },
         { to: '/management/leaderboard', label: 'Leaderboard' },
         { to: '/management/announcements', label: 'Announcements' },
+        { to: '/management/concerns', label: 'Concerns' },
+        { to: '/management/performance', label: 'Performance' },
     ],
-    teacher: [{ to: '/teacher/dashboard', label: 'Dashboard' }],
-    student: [{ to: '/student/dashboard', label: 'Dashboard' }],
+    teacher: [
+        { to: '/teacher/dashboard', label: 'Dashboard' },
+        { to: '/teacher/scores', label: 'Marks' },
+        { to: '/teacher/attendance', label: 'Attendance' },
+        { to: '/teacher/homework', label: 'Homework' },
+        { to: '/teacher/timetable', label: 'Timetable' },
+        { to: '/teacher/announcements', label: 'Announcements' },
+        { to: '/teacher/concerns', label: 'Concerns' },
+        { to: '/teacher/performance', label: 'Performance' },
+    ],
+    student: [
+        { to: '/student/dashboard', label: 'Dashboard' },
+        { to: '/student/timetable', label: 'Timetable' },
+        { to: '/student/performance', label: 'Performance' },
+        { to: '/student/concerns', label: 'Concerns' },
+    ],
 };
 
 interface SidebarProps {

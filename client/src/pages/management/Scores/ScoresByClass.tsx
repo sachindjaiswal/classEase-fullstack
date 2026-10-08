@@ -10,6 +10,7 @@ export default function ScoresByClass() {
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
     const [examFilter, setExamFilter] = useState('all');
+    const [semesterFilter, setSemesterFilter] = useState('all');
     const [scores, setScores] = useState<ScoreFull[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -45,8 +46,16 @@ export default function ScoresByClass() {
         }
     };
 
-    const filtered = examFilter === 'all' ? scores : scores.filter((s) => s.exam_type === examFilter);
+    const filtered =
+        examFilter === 'all'
+            ? scores
+            : scores.filter((s) => s.exam_type === examFilter);
     const exams = EXAM_TYPES.filter((exam) => scores.some((s) => s.exam_type === exam));
+    const semesters = [...new Set(scores.map((s) => s.semester))];
+    const semesterFiltered =
+        semesterFilter === 'all'
+            ? filtered
+            : filtered.filter((s) => s.semester === semesterFilter);
 
     return (
         <div>
@@ -78,6 +87,24 @@ export default function ScoresByClass() {
                     </select>
                 </label>
 
+                {semesters.length > 0 && (
+                    <label className="flex max-w-xs flex-col gap-1.5 text-sm">
+                        <span className="font-medium text-ink2">Semester</span>
+                        <select
+                            value={semesterFilter}
+                            onChange={(e) => setSemesterFilter(e.target.value)}
+                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        >
+                            <option value="all">All semesters</option>
+                            {semesters.map((semester) => (
+                                <option key={semester} value={semester}>
+                                    {semester}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                )}
+
                 {exams.length > 0 && (
                     <label className="flex max-w-xs flex-col gap-1.5 text-sm">
                         <span className="font-medium text-ink2">Exam</span>
@@ -101,7 +128,7 @@ export default function ScoresByClass() {
                 {loading && <p className="p-6 text-sm text-muted">Loading scores...</p>}
                 {error && <p className="p-6 text-sm text-danger">{error}</p>}
 
-                {!loading && !error && filtered.length === 0 && (
+                {!loading && !error && semesterFiltered.length === 0 && (
                     <div className="p-10 text-center">
                         <p className="text-sm font-medium text-ink2">No scores recorded</p>
                         <p className="mt-1 text-sm text-muted">
@@ -110,7 +137,7 @@ export default function ScoresByClass() {
                     </div>
                 )}
 
-                {!loading && !error && filtered.length > 0 && (
+                {!loading && !error && semesterFiltered.length > 0 && (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-base text-xs uppercase tracking-wide text-muted">
@@ -118,13 +145,14 @@ export default function ScoresByClass() {
                                     <th className="whitespace-nowrap px-5 py-3 font-medium">Student</th>
                                     <th className="whitespace-nowrap px-5 py-3 font-medium">Subject</th>
                                     <th className="whitespace-nowrap px-5 py-3 font-medium">Exam</th>
+                                    <th className="whitespace-nowrap px-5 py-3 font-medium">Semester</th>
                                     <th className="whitespace-nowrap px-5 py-3 font-medium">Marks</th>
                                     <th className="whitespace-nowrap px-5 py-3 font-medium">Percentage</th>
                                     <th className="whitespace-nowrap px-5 py-3 font-medium"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {filtered.map((s) => {
+                                {semesterFiltered.map((s) => {
                                     const pct = s.total_marks ? Math.round((s.marks_obtained / s.total_marks) * 100) : 0;
                                     return (
                                         <tr key={s.id} className="hover:bg-base/60">
@@ -136,6 +164,9 @@ export default function ScoresByClass() {
                                             </td>
                                             <td className="whitespace-nowrap px-5 py-3 text-muted">
                                                 {s.exam_type}
+                                            </td>
+                                            <td className="whitespace-nowrap px-5 py-3 text-muted">
+                                                {s.semester}
                                             </td>
                                             <td className="whitespace-nowrap px-5 py-3 data-figure text-muted">
                                                 {s.marks_obtained}/{s.total_marks}

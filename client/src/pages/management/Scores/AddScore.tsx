@@ -20,6 +20,7 @@ export default function AddScore() {
         subject_id: '',
         student_id: '',
         exam_type: EXAM_TYPES[0],
+        semester: 'current',
         marks_obtained: '',
         total_marks: '',
     });
@@ -63,6 +64,7 @@ export default function AddScore() {
                 subject_id: Number(form.subject_id),
                 student_id: Number(form.student_id),
                 exam_type: form.exam_type,
+                semester: form.semester,
                 marks_obtained: Number(form.marks_obtained),
                 total_marks: Number(form.total_marks),
             });
@@ -167,6 +169,20 @@ export default function AddScore() {
                 </label>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label className="flex flex-col gap-1.5 text-sm">
+                        <span className="font-medium text-ink2">Semester</span>
+                        <input
+                            type="text"
+                            value={form.semester}
+                            onChange={(e) => update('semester', e.target.value)}
+                            placeholder="e.g. Fall 2025"
+                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        />
+                        {fieldError('semester') && (
+                            <span className="text-xs text-danger">{fieldError('semester')}</span>
+                        )}
+                    </label>
+
                     <label className="flex flex-col gap-1.5 text-sm">
                         <span className="font-medium text-ink2">Marks Obtained</span>
                         <input

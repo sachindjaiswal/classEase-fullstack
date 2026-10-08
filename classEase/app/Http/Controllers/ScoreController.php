@@ -16,6 +16,7 @@ class ScoreController extends Controller
             'subject_id' => 'required|exists:subjects,id',
             'class_id' => 'required|exists:classes,id',
             'exam_type' => 'required|string|max:255',
+            'semester' => 'required|string|max:255',
             'marks_obtained' => 'required|integer|min:0|lte:total_marks',
             'total_marks' => 'required|integer|min:1',
         ]);
@@ -23,11 +24,12 @@ class ScoreController extends Controller
         $exists = Score::where('student_id', $validated['student_id'])
             ->where('subject_id', $validated['subject_id'])
             ->where('exam_type', $validated['exam_type'])
+            ->where('semester', $validated['semester'])
             ->exists();
 
         if ($exists) {
             return response()->json([
-                'message' => 'A score for this student, subject and exam already exists.',
+                'message' => 'A score for this student, subject, exam and semester already exists.',
             ], 409);
         }
 
@@ -114,6 +116,7 @@ class ScoreController extends Controller
             'subject_id' => 'sometimes|exists:subjects,id',
             'class_id' => 'sometimes|exists:classes,id',
             'exam_type' => 'sometimes|string|max:255',
+            'semester' => 'sometimes|string|max:255',
             'marks_obtained' => 'sometimes|integer|min:0|lte:total_marks',
             'total_marks' => 'sometimes|integer|min:1',
         ]);
@@ -121,12 +124,13 @@ class ScoreController extends Controller
         $duplicate = Score::where('student_id', $validated['student_id'] ?? $score->student_id)
             ->where('subject_id', $validated['subject_id'] ?? $score->subject_id)
             ->where('exam_type', $validated['exam_type'] ?? $score->exam_type)
+            ->where('semester', $validated['semester'] ?? $score->semester)
             ->where('id', '!=', $score->id)
             ->exists();
 
         if ($duplicate) {
             return response()->json([
-                'message' => 'A score for this student, subject and exam already exists.',
+                'message' => 'A score for this student, subject, exam and semester already exists.',
             ], 409);
         }
 

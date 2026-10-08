@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Subject;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SubjectController extends Controller
 {
     // Get all subjects
-    public function getAllSubjects()
+    public function getAllSubjects(): JsonResponse
     {
         $subjects = Subject::with([
             'class',
@@ -21,8 +22,23 @@ class SubjectController extends Controller
         ]);
     }
 
+    // Get all subjects for a class
+    public function getSubjectsByClass(int $classId): JsonResponse
+    {
+        $subjects = Subject::with([
+            'class',
+            'teacher',
+        ])->where('classId', $classId)
+            ->get();
+
+        return response()->json([
+            'message' => 'Subjects retrieved successfully',
+            'subjects' => $subjects,
+        ], 200);
+    }
+
     // Get one subject
-    public function getSubject($id)
+    public function getSubject(int $id): JsonResponse
     {
         $subject = Subject::with([
             'class',
@@ -42,7 +58,7 @@ class SubjectController extends Controller
     }
 
     // Create subject
-    public function createSubject(Request $request)
+    public function createSubject(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'classId' => ['required', 'exists:classes,id'],
@@ -64,7 +80,7 @@ class SubjectController extends Controller
     }
 
     // Update subject
-    public function updateSubject(Request $request, $id)
+    public function updateSubject(Request $request, int $id): JsonResponse
     {
         $subject = Subject::find($id);
 
@@ -94,7 +110,7 @@ class SubjectController extends Controller
     }
 
     // Delete subject
-    public function deleteSubject($id)
+    public function deleteSubject(int $id): JsonResponse
     {
         $subject = Subject::find($id);
 

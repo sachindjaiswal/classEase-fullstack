@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { createTeacher } from '@/api/teachers';
 import type { TeacherInput } from '@/types';
 import Button from '@/components/Button';
+import PasswordInput from '@/components/PasswordInput';
 
 const EMPTY: TeacherInput = {
     first_name: '',
     middle_name: '',
     surname: '',
     email: '',
+    password: '',
     contact: '',
     designation: '',
     monthly_salary: 0,
@@ -43,7 +45,8 @@ export default function AddTeacher() {
         <div className="max-w-xl">
             <h1 className="text-2xl font-semibold text-ink2">Add Teacher</h1>
             <p className="mt-1 text-sm text-muted">
-                Recruit a new teacher into the system.
+                Recruit a new teacher into the system. They sign in with the
+                email and password you enter.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
@@ -75,6 +78,13 @@ export default function AddTeacher() {
                     value={form.email}
                     onChange={(v) => update('email', v)}
                     error={fieldError('email')}
+                />
+
+                <PasswordInput
+                    label="Password"
+                    value={form.password ?? ''}
+                    onChange={(v) => update('password', v)}
+                    error={fieldError('password')}
                 />
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

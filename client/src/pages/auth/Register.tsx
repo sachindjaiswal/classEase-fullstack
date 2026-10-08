@@ -16,14 +16,12 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
-    const [role, setRole] = useState<string>('');
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<{
         name?: string;
         email?: string;
         password?: string;
         password_confirmation?: string;
-        role?: string;
         general?: string;
     }>({});
     const [submitting, setSubmitting] = useState(false);
@@ -48,9 +46,6 @@ export default function Register() {
         } else if (password !== passwordConfirmation) {
             next.password_confirmation = 'Passwords do not match';
         }
-        if (!role) {
-            next.role = 'Please select a role';
-        }
         setErrors(next);
         return Object.keys(next).length === 0;
     };
@@ -62,7 +57,7 @@ export default function Register() {
         setSubmitting(true);
         setErrors({});
         try {
-            await register(name, email, password, passwordConfirmation, role);
+            await register(name, email, password, passwordConfirmation);
         } catch (err: any) {
             const serverErrors = err?.response?.data?.errors;
             if (serverErrors) {
@@ -71,7 +66,6 @@ export default function Register() {
                     email: serverErrors.email?.[0],
                     password: serverErrors.password?.[0],
                     password_confirmation: serverErrors.password_confirmation?.[0],
-                    role: serverErrors.role?.[0],
                 });
             } else {
                 const msg =
@@ -101,7 +95,8 @@ export default function Register() {
                     </div>
                     <h1 className="font-display text-xl font-semibold text-ink2">ClassEase</h1>
                 </div>
-                <p className="mt-3 text-sm text-muted">Create your account.</p>
+                <p className="mt-3 text-sm text-muted">
+                    Create your student account to get started.</p>
 
                 {errors.general && (
                     <div className="mt-4 rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -141,27 +136,6 @@ export default function Register() {
                         />
                         {errors.email && (
                             <span className="text-xs text-danger">{errors.email}</span>
-                        )}
-                    </label>
-
-                    <label className="flex flex-col gap-1.5 text-sm">
-                        <span className="font-medium text-ink2">Role</span>
-                        <select
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                            className={`rounded-md border px-3 py-2 text-sm outline-none focus:border-ink ${
-                                errors.role ? 'border-danger' : 'border-border'
-                            } ${!role ? 'text-muted' : 'text-ink2'}`}
-                        >
-                            <option value="" disabled>
-                                Select your role
-                            </option>
-                            <option value="admin">Admin (Management)</option>
-                            <option value="teacher">Teacher</option>
-                            <option value="student">Student</option>
-                        </select>
-                        {errors.role && (
-                            <span className="text-xs text-danger">{errors.role}</span>
                         )}
                     </label>
 

@@ -4,6 +4,7 @@ import { getStudent, updateStudent } from '@/api/students';
 import { getClasses } from '@/api/classes';
 import type { StudentInput, SchoolClass, Student } from '@/types';
 import Button from '@/components/Button';
+import PasswordInput from '@/components/PasswordInput';
 
 const EMPTY: StudentInput = {
     classId: 0,
@@ -140,9 +141,8 @@ export default function EditStudent() {
                     error={fieldError('email')}
                 />
 
-                <Field
+                <PasswordInput
                     label="Password"
-                    type="password"
                     value={form.password}
                     onChange={(v) => update('password', v)}
                     error={fieldError('password')}

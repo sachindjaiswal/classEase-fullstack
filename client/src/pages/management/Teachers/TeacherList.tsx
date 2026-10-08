@@ -63,6 +63,9 @@ export default function TeacherList() {
                             <thead className="bg-base text-xs uppercase tracking-wide text-muted">
                                 <tr>
                                     <th className="whitespace-nowrap px-5 py-3 font-medium">
+                                        No.
+                                    </th>
+                                    <th className="whitespace-nowrap px-5 py-3 font-medium">
                                         Name
                                     </th>
                                     <th className="whitespace-nowrap px-5 py-3 font-medium">
@@ -78,8 +81,11 @@ export default function TeacherList() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {teachers.map((t) => (
+                                {teachers.map((t, idx) => (
                                     <tr key={t.id} className="hover:bg-base/60">
+                                        <td className="whitespace-nowrap px-5 py-3 text-muted data-figure">
+                                            {idx + 1}
+                                        </td>
                                         <td className="whitespace-nowrap px-5 py-3 font-medium text-ink2">
                                             {t.first_name} {t.surname}
                                         </td>

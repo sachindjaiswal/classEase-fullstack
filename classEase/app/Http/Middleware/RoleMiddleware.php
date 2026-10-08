@@ -11,7 +11,7 @@ class RoleMiddleware
     public function handle(
         Request $request,
         Closure $next,
-        ...$roles
+        string ...$roles
     ): Response {
         $user = $request->user();
 

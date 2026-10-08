@@ -4,6 +4,7 @@ import { createStudent } from '@/api/students';
 import { getClasses } from '@/api/classes';
 import type { SchoolClass, StudentInput } from '@/types';
 import Button from '@/components/Button';
+import PasswordInput from '@/components/PasswordInput';
 
 const EMPTY: StudentInput = {
     classId: 0,
@@ -61,7 +62,8 @@ export default function AddStudent() {
         <div className="max-w-xl">
             <h1 className="text-2xl font-semibold text-ink2">Add Student</h1>
             <p className="mt-1 text-sm text-muted">
-                Take admission for a new student.
+                Take admission for a new student. They sign in with the email
+                and password you enter.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
@@ -120,9 +122,8 @@ export default function AddStudent() {
                     error={fieldError('email')}
                 />
 
-                <Field
+                <PasswordInput
                     label="Password"
-                    type="password"
                     value={form.password}
                     onChange={(v) => update('password', v)}
                     error={fieldError('password')}

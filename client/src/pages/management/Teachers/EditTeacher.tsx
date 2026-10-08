@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getTeacher, updateTeacher } from '@/api/teachers';
 import type { TeacherInput } from '@/types';
 import Button from '@/components/Button';
+import PasswordInput from '@/components/PasswordInput';
 
 const EMPTY: TeacherInput = {
     first_name: '',
@@ -92,6 +93,13 @@ export default function EditTeacher() {
                     value={form.email}
                     onChange={(v) => update('email', v)}
                     error={fieldError('email')}
+                />
+
+                <PasswordInput
+                    label="New password (blank = keep current)"
+                    value={form.password ?? ''}
+                    onChange={(v) => update('password', v)}
+                    error={fieldError('password')}
                 />
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

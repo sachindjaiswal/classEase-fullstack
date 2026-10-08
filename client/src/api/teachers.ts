@@ -5,6 +5,8 @@ export const getTeachers = () => api.get<Teacher[]>('/teachers');
 
 export const getTeacher = (id: number) => api.get<Teacher>(`/teachers/${id}`);
 
+export const getTeacherMe = () => api.get<Teacher>('/teacher/me');
+
 export const createTeacher = (payload: TeacherInput) =>
   api.post<{ message: string; teacher: Teacher }>('/teachers', payload);
 

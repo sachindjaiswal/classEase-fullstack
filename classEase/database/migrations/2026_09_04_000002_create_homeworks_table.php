@@ -20,6 +20,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->foreignId('assigned_by')
+                ->nullable()
                 ->constrained('teachers')
                 ->cascadeOnDelete();
 

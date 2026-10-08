@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\Subject;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class StudentController extends Controller
 {
@@ -18,19 +21,40 @@ class StudentController extends Controller
             'firstName' => 'required|string|max:255',
             'middleName' => 'nullable|string|max:255',
             'surname' => 'required|string|max:255',
-            'email' => 'required|email|unique:students,email',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('students', 'email')->whereNull('deleted_at'),
+                Rule::unique('users', 'email')->whereNull('deleted_at'),
+            ],
             'password' => 'required|min:6',
             'contact' => 'required',
             'parentContact' => 'required',
             'address' => 'required|string',
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
+        DB::transaction(function () use ($validated) {
+            $user = User::create([
+                'name' => trim(implode(' ', array_filter([
+                    $validated['firstName'],
+                    $validated['middleName'] ?? null,
+                    $validated['surname'],
+                ]))),
+                'email' => $validated['email'],
+                'password' => $validated['password'],
+                'role' => 'student',
+            ]);
 
-        $student = Student::create($validated);
+            Student::create(array_merge($validated, [
+                'user_id' => $user->id,
+                'password' => Hash::make($validated['password']),
+            ]));
+        });
+
+        $student = Student::with('class')->where('email', $validated['email'])->first();
 
         return response()->json([
-            'message' => 'Student added successfully',
+            'message' => 'Student added successfully. Their login is the email and password you entered.',
             'student' => $student,
         ], 201);
     }
@@ -50,14 +74,40 @@ class StudentController extends Controller
         ]);
     }
 
-    public function getAllStudentFromClass(int $id): JsonResponse
+    public function getMyStudent(Request $request): JsonResponse
     {
+        $student = Student::with('class')->where('user_id', $request->user()?->id)->first();
+
+        if (! $student) {
+            return response()->json(['message' => 'No student profile linked to this account'], 404);
+        }
+
+        return response()->json([
+            'message' => 'Student retrieved successfully',
+            'student' => $student,
+        ]);
+    }
+
+    public function getAllStudentFromClass(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user?->role === 'student') {
+            $ownClass = $user->student()->value('classId');
+
+            if (! is_numeric($ownClass) || (int) $ownClass !== (int) $id) {
+                return response()->json([
+                    'message' => 'Students can only view their own class roster',
+                ], 403);
+            }
+        }
+
         $students = Student::with('class')->where('classId', $id)->get();
 
         return response()->json($students);
     }
 
-    public function getStudentSubjects($id)
+    public function getStudentSubjects(int $id): JsonResponse
     {
         $student = Student::find($id);
 
@@ -90,18 +140,64 @@ class StudentController extends Controller
             'firstName' => 'sometimes|string|max:255',
             'middleName' => 'nullable|string|max:255',
             'surname' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:students,email,'.$id,
+            'email' => [
+                'sometimes',
+                'email',
+                Rule::unique('students', 'email')->ignore($id)->whereNull('deleted_at'),
+                Rule::unique('users', 'email')->ignore($student->user_id)->whereNull('deleted_at'),
+            ],
             'password' => 'sometimes|nullable|min:6',
             'contact' => 'sometimes|string',
             'parentContact' => 'sometimes|string',
             'address' => 'sometimes|string',
         ]);
 
-        if (isset($validated['password'])) {
+        $plainPassword = null;
+
+        if (! empty($validated['password'])) {
+            $plainPassword = $validated['password'];
             $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
         }
 
-        $student->update($validated);
+        DB::transaction(function () use ($student, $validated, $plainPassword) {
+            $student->update($validated);
+
+            $name = trim(implode(' ', array_filter([
+                $validated['firstName'] ?? $student->firstName,
+                $validated['middleName'] ?? $student->middleName,
+                $validated['surname'] ?? $student->surname,
+            ])));
+
+            $email = $validated['email'] ?? $student->email;
+
+            if ($student->user_id) {
+                $user = User::find($student->user_id);
+
+                if ($user) {
+                    $data = [
+                        'name' => $name,
+                        'email' => $email,
+                    ];
+
+                    if ($plainPassword !== null) {
+                        $data['password'] = $plainPassword;
+                    }
+
+                    $user->update($data);
+                }
+            } elseif ($plainPassword !== null) {
+                $user = User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'password' => $plainPassword,
+                    'role' => 'student',
+                ]);
+
+                $student->update(['user_id' => $user->id]);
+            }
+        });
 
         return response()->json([
             'message' => 'Student updated successfully',
@@ -116,6 +212,8 @@ class StudentController extends Controller
         if (! $student) {
             return response()->json(['message' => 'Student not found'], 404);
         }
+
+        $student->user?->forceDelete();
 
         $student->delete();
 

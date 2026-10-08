@@ -496,22 +496,36 @@ graph TB
 | Class CRUD | Yes | No | No |
 | Student CRUD | Yes | No | No |
 | Subject CRUD | Yes | No | No |
-| Mark Attendance | Yes | No | No |
+| Class roster (view students in a class) | Yes | Yes | No |
+| View teacher / subject detail | Yes | Yes | No |
+| Mark Attendance | Yes | Yes | No |
 | View Attendance | Yes | Own class | Own |
-| Assign Homework | Yes | No | No |
+| Assign Homework | Yes | Yes | No |
 | View Homework | Yes | Yes | Own class |
+| Record / Edit / Delete Scores | Yes | Yes | No |
+| View Scores | Yes | Yes | Own |
+| Post Announcements | Yes | Yes | No |
+| View Announcements | Yes | Yes | Own class + general |
+| View Leaderboard | Yes | Yes | Read-only |
 | View Own Profile | Yes | Yes | Yes |
+
+> **Enforced server-side (2026-09-06)** via the `role` middleware on every authenticated
+> route. Previously every authenticated user could call any endpoint; now each route is gated
+> to `role:admin`, `role:admin,teacher`, or `role:admin,teacher,student`.
 
 ---
 
 ## 9. Features Implemented
 
 ### Module 1: Authentication
-- User registration with role selection
+- User registration — self-registration creates a **student** account only (role is forced
+  server-side; a client-supplied role is ignored)
 - Login with email/password
 - Sanctum token-based authentication
 - Logout functionality
 - Protected routes with role guards
+- **Role-based access control (2026-09-06)** — `role:admin`, `role:admin,teacher`, and
+  `role:admin,teacher,student` middleware groups enforce access on every API route
 
 ### Module 2: Teacher Management
 - List all teachers
@@ -581,6 +595,19 @@ graph TB
 - List/edit/delete announcements, newest first
 - Audience + poster (management/teacher) shown per announcement
 - Student portal shows announcements for their class plus general ones
+
+### Module 12: Timetable
+- Per-class weekly schedule: rows = periods, columns = Monday–Friday
+- Grid editor for management (subject per cell, add/remove period rows, bulk save)
+- Teacher portal shows their own teaching periods (by teacher_id)
+- Student portal shows their class's schedule
+- Bulk save is idempotent (updateOrCreate per class/day/period, removed slots deleted)
+
+### Module 13: Concerns
+- Students raise concerns (subject + description) — student_id derived from the authenticated account
+- Admin/teacher view all concerns, set status (open / in_progress / resolved) and reply
+- Auto-records who resolved a concern (resolved_by); students are scoped to their own concerns
+- Student portal: raise + track (status badge + admin reply); teacher portal: view/manage (no delete)
 
 ---
 
@@ -697,6 +724,27 @@ graph TB
 | GET | `/api/announcements/class/{classId}` | List class announcements + general ones |
 | GET | `/api/announcements/student/{studentId}` | List a student's class + general announcements |
 
+### Timetable (Protected)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/timetable` | Bulk save a class's timetable grid (admin/teacher) |
+| PUT | `/api/timetable/{id}` | Update a single timetable entry (admin/teacher) |
+| DELETE | `/api/timetable/{id}` | Delete a timetable entry (admin/teacher) |
+| GET | `/api/timetable/class/{classId}` | Get a class's timetable |
+| GET | `/api/timetable/teacher/{teacherId}` | Get a teacher's teaching periods |
+
+### Concerns (Protected)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/concerns` | Student raises a concern (role: student) |
+| GET | `/api/concerns` | List all concerns, newest first (admin/teacher) |
+| PUT | `/api/concerns/{id}` | Update status and/or admin reply (admin/teacher) |
+| DELETE | `/api/concerns/{id}` | Delete a concern (admin/teacher) |
+| GET | `/api/concerns/student/{studentId}` | List a student's concerns (students see only their own) |
+| GET | `/api/concerns/{id}` | Get a single concern (students see only their own) |
+
 ---
 
 ## 11. Frontend Pages
@@ -744,13 +792,17 @@ Management Dashboard
     ├── AnnouncementList.tsx
     ├── AddAnnouncement.tsx
     └── EditAnnouncement.tsx
+└── Timetable/
+    └── TimetableGrid.tsx
 
 Teacher Dashboard
 ├── Dashboard.tsx              (Profile + Subjects)
+├── Timetable.tsx              (Own teaching periods)
 └── Teacher subjects view (management → TeacherSubjects.tsx)
 
 Student Dashboard
-└── Dashboard.tsx              (Profile + Class + Subjects + Scores)
+├── Dashboard.tsx              (Profile + Class + Subjects + Scores)
+└── Timetable.tsx              (Own class schedule)
 ```
 
 ### Navigation Flow
@@ -774,6 +826,7 @@ graph TD
     ADASH --> ASCORE[Scores<br/>/management/scores]
     ADASH --> ALEAD[Leaderboard<br/>/management/leaderboard]
     ADASH --> AANN[Announcements<br/>/management/announcements]
+    ADASH --> ATT[Timetable<br/>/management/timetable]
 
     ASTUD --> ASTUD1[Students by Class]
     ASTUD --> ASTUD2[Add Student]
@@ -800,10 +853,16 @@ graph TD
     AANN --> AANN1[Add Announcement]
     AANN --> AANN2[Edit Announcement]
 
+    ATT --> ATT1[Select Class]
+    ATT --> ATT2[Edit Period Grid]
+    ATT --> ATT3[Save Grid]
+
     TDASH --> TSUBJ[Assigned Subjects]
+    TDASH --> TT[Own Timetable]
     SDASH --> SCONTS[Own Class & Subjects]
     SDASH --> SCORES[Own Scores]
     SDASH --> SANN[Own Announcements]
+    SDASH --> ST[Own Timetable]
 ```
 
 ---
@@ -930,6 +989,93 @@ graph TD
 - Added "Your Scores" card to the Student Dashboard
 - Added Scores link to Sidebar
 
+### Day 8 — September 6, 2026
+**Task:** Role-Based Access Control (Auth Hardening)
+
+- Enforced role middleware on every protected API route (`role:admin`, `role:admin,teacher`,
+  `role:admin,teacher,student` groups) in `routes/api.php`. Previously any authenticated user
+  could call any endpoint.
+- Public registration now always creates a **student** account; the client-supplied `role` field
+  is ignored server-side (removed from validation + creation), closing the privilege-escalation hole.
+- Removed the role selector from the Registration UI (`client/src/pages/auth/Register.tsx`) and
+  dropped the `role` param from `AuthContext.register()`.
+- Permission matrix and Module 1 (Authentication) journal entries updated to reflect enforced RBAC.
+
+### Day 8 — September 6, 2026 (Afternoon)
+**Task:** Timetable Module
+
+**Backend:**
+- Created timetables migration (class_id, day, period, nullable subject_id/teacher_id, start_time/end_time, unique [class_id, day, period])
+- Created Timetable model (belongsTo classes/Subject/Teacher)
+- Created TimetableController: saveTimetable (bulk upsert grid, deletes removed slots, auto-fills teacher from subject), getTimetableByClass, getTimetableByTeacher, updateTimetable, deleteTimetable
+- Added 5 timetable routes: POST/PUT/DELETE /api/timetable (admin/teacher), GET by class/teacher (all roles)
+- Migration applied in Docker; route list verified with correct role middleware
+
+**Frontend:**
+- Built TimetableGrid.tsx (management, class selector + period×day grid editor, add/remove periods, bulk save)
+- Built TimetableView.tsx (shared read-only period×day grid)
+- Built teacher Timetable.tsx (own teaching periods) and student Timetable.tsx (own class schedule)
+- Added timetable types + api/timetable.ts
+- Added Timetable links to Sidebar + routes for all three portals
+
+**Verification:**
+- Client build PASS, PHPStan clean (no new errors), tests PASS, Pint PASS
+- Smoke tested via :8080: admin save/get timetable OK; student write 403 / read 200 (RBAC enforced)
+
+### Day 8 — September 6, 2026 (Evening)
+**Task:** Concerns Module (final planned module)
+
+**Backend:**
+- Created concerns migration (student_id, subject, description, status enum open/in_progress/resolved, admin_reply, resolved_by)
+- Created Concern model (belongsTo Student, User resolver)
+- Created ConcernController: createConcern (student_id resolved from authenticated user), getConcerns, getConcernsByStudent, getConcern, updateConcern (auto-sets/clears resolved_by), deleteConcern; students scoped to their own concerns (403 otherwise)
+- Added 6 concern routes: GET/PUT/DELETE /api/concerns (admin/teacher), POST /api/concerns (student), GET by student/own (all roles)
+
+**Frontend:**
+- Built management ConcernList.tsx (status filter, inline respond with status + reply, delete; canDelete prop)
+- Built student Concerns.tsx (raise form + track own with status badge and admin reply)
+- Built teacher Concerns.tsx (reuses ConcernList without delete)
+- Added concern types + api/concerns.ts
+- Added Concerns links to Sidebar + routes for all three portals
+
+**Verification:**
+- Client build PASS, PHPStan clean (no new errors), tests PASS, Pint PASS, middleware verified per route
+- RBAC smoke via :8080: student create 201 → admin list/respond (status+reply+resolver) → teacher list 200 → student own-read 200 (sees reply); student2 reading student1's concerns 403; student on admin-list 403; student update 403. Test data cleaned up.
+
+### Core Product Idea — stored 2026-09-06 (design continues tomorrow)
+
+The whole project is based on **comparative performance**: every student should be able to
+compare themselves against classmates (who scored more, in which subject, by how much), learn
+what higher-scorers did to outscore them, and compare against their **own previous marks
+(e.g. previous semester)**. Partially covered by Leaderboard + Scores so far; full comparative
+UI/API is the next design task. See PROJECT_CONTEXT.md → "Core Product Idea".
+
+### Comparative Performance — Design Plan (2026-09-07)
+
+Build order for the comparative-performance feature:
+
+**Step 1 — Add `semester` to scores table.** New migration adds `string('semester')->default('current')`.
+Unique constraint becomes `(student_id, subject_id, exam_type, semester)`. Update Score model,
+ScoreController, and all frontend score forms/leaderboard to accept semester.
+
+**Step 2 — Backend `ComparisonController`** (3 endpoints):
+- `GET /comparison/subject/{classId}/{subjectId}` — all students in class for one subject,
+  marks + % + "you" highlighted + class avg/min/max
+- `GET /comparison/gaps/{studentId}` — per-subject gaps (student vs top-3 avg vs class avg),
+  sorted by biggest gap first
+- `GET /comparison/progress/{studentId}` — per-subject previous semester vs current semester,
+  delta + trend
+
+**Step 3 — Frontend "Performance" page** (`/student/comparison`) with 3 tabs:
+1. "vs Classmates" — subject dropdown → table of classmate marks with +/- vs you
+2. "Where to Focus" — per-subject gap cards, biggest gap first
+3. "My Progress" — per-subject previous vs current semester with trend arrows
+
+**Step 4 — Wire semester into existing features.** ScoresByClass, LeaderboardByClass,
+AddScore, EditScore all get semester selector/filter.
+
+Open questions: semester naming (freeform vs predefined), admin/teacher access, sidebar label.
+
 ---
 
 ## 13. Future Scope
@@ -940,10 +1086,9 @@ graph TD
 |---|---|
 | ~~Scores/Performance~~ | ~~Track student marks per subject per exam~~ — **DONE (2026-09-05)** |
 | Leaderboard | Rank students by performance across subjects — **DONE (2026-09-05)** |
-| Announcements | Admin/teacher post announcements to classes — **DONE (2026-09-05)** |
-| Announcements | Admin/teacher post announcements to classes |
-| Timetable | Digital class schedule (period, subject, time) |
-| Concerns | Student/parent raise concerns, admin resolves |
+| ~~Announcements~~ | ~~Admin/teacher post announcements to classes~~ — **DONE (2026-09-05)** |
+| ~~Timetable~~ | ~~Digital class schedule (period, subject, time)~~ — **DONE (2026-09-06)** |
+| ~~Concerns~~ | ~~Student/parent raise concerns, admin resolves~~ — **DONE (2026-09-06)** |
 
 ### Phase 3 (Future)
 

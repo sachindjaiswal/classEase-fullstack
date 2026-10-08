@@ -6,7 +6,7 @@ interface AuthContextValue {
     user: User | null;
     loading: boolean;
     login: (email: string, password: string) => Promise<void>;
-    register: (name: string, email: string, password: string, password_confirmation: string, role: string) => Promise<void>;
+    register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -58,8 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({ id: bUser.id, name: bUser.name, email: bUser.email, role });
     };
 
-    const register = async (name: string, email: string, password: string, password_confirmation: string, role: string) => {
-        const res = await api.post('/register', { name, email, password, password_confirmation, role });
+    const register = async (name: string, email: string, password: string, password_confirmation: string) => {
+        const res = await api.post('/register', { name, email, password, password_confirmation });
         const { user: bUser, token } = res.data;
         localStorage.setItem('authToken', token);
         const mappedRole = mapRole(bUser.role);

@@ -4,12 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Homework;
 use App\Models\Student;
+use App\Models\Subject;
 use App\Models\Teacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class HomeworkController extends Controller
 {
+    private function canManageSubject(?Teacher $teacher, Request $request, int $subjectId): bool
+    {
+        if ($request->user()->role === 'admin') {
+            return true;
+        }
+
+        $subject = Subject::find($subjectId);
+
+        return $teacher !== null && $subject !== null && $subject->teacherId === $teacher->id;
+    }
+
     public function createHomework(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -22,6 +34,10 @@ class HomeworkController extends Controller
         ]);
 
         $teacher = Teacher::where('user_id', $request->user()->id)->first();
+
+        if (! $this->canManageSubject($teacher, $request, $validated['subject_id'])) {
+            return response()->json(['message' => 'You can only assign homework for your own subjects'], 403);
+        }
 
         $homework = Homework::create([
             ...$validated,
@@ -69,6 +85,12 @@ class HomeworkController extends Controller
             return response()->json(['message' => 'Homework not found'], 404);
         }
 
+        $teacher = Teacher::where('user_id', $request->user()->id)->first();
+
+        if ($request->user()->role !== 'admin' && $homework->assigned_by !== $teacher?->id) {
+            return response()->json(['message' => 'You can only update homework you assigned'], 403);
+        }
+
         $validated = $request->validate([
             'class_id' => 'sometimes|exists:classes,id',
             'subject_id' => 'sometimes|exists:subjects,id',
@@ -78,6 +100,10 @@ class HomeworkController extends Controller
             'due_date' => 'sometimes|date',
         ]);
 
+        if (isset($validated['subject_id']) && ! $this->canManageSubject($teacher, $request, $validated['subject_id'])) {
+            return response()->json(['message' => 'You can only update homework for your own subjects'], 403);
+        }
+
         $homework->update($validated);
 
         return response()->json([
@@ -86,12 +112,18 @@ class HomeworkController extends Controller
         ], 200);
     }
 
-    public function deleteHomework(int $id): JsonResponse
+    public function deleteHomework(Request $request, int $id): JsonResponse
     {
         $homework = Homework::find($id);
 
         if (! $homework) {
             return response()->json(['message' => 'Homework not found'], 404);
+        }
+
+        $teacher = Teacher::where('user_id', $request->user()->id)->first();
+
+        if ($request->user()->role !== 'admin' && $homework->assigned_by !== $teacher?->id) {
+            return response()->json(['message' => 'You can only delete homework you assigned'], 403);
         }
 
         $homework->delete();

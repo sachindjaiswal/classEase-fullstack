@@ -22,6 +22,13 @@ export default {
         success: '#2F9E5B',
         danger: '#D64545',
         warning: '#E0A339',
+        teal: {
+          DEFAULT: '#2E9B9A',
+          dark: '#227675',
+          light: '#5FC4C3',
+        },
+        yellow: '#FFD014',
+        pink: '#FF3E6C',
       },
       fontFamily: {
         display: ['"Space Grotesk"', 'sans-serif'],

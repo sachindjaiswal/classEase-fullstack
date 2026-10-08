@@ -16,6 +16,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    // Poll instead of relying on chokidar so bind-mounted edits from the
+    // Windows host are picked up inside Docker (otherwise Vite serves stale modules).
+    watch: { usePolling: true },
     proxy: {
       '/api': {
         target: apiTarget,

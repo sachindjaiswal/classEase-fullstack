@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getClasses } from '@/api/classes';
 import { getLeaderboardByClass } from '@/api/leaderboard';
+import { getScoresByClass } from '@/api/scores';
 import { EXAM_TYPES } from '@/pages/management/Scores/exams';
 import type { LeaderboardEntry, SchoolClass } from '@/types';
 
@@ -14,6 +15,8 @@ export default function LeaderboardByClass() {
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
     const [examFilter, setExamFilter] = useState('all');
+    const [semesterFilter, setSemesterFilter] = useState('current');
+    const [availableSemesters, setAvailableSemesters] = useState<string[]>([]);
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -30,13 +33,26 @@ export default function LeaderboardByClass() {
 
     useEffect(() => {
         if (selectedClassId === null) return;
+        getScoresByClass(selectedClassId)
+            .then((res) => {
+                setAvailableSemesters([...new Set(res.data.scores.map((s) => s.semester))]);
+            })
+            .catch(() => {});
+    }, [selectedClassId]);
+
+    useEffect(() => {
+        if (selectedClassId === null) return;
         setLoading(true);
         setError(null);
-        getLeaderboardByClass(selectedClassId, examFilter === 'all' ? undefined : examFilter)
+        getLeaderboardByClass(
+            selectedClassId,
+            examFilter === 'all' ? undefined : examFilter,
+            semesterFilter,
+        )
             .then((res) => setEntries(res.data.leaderboard))
             .catch(() => setError("Couldn't load the leaderboard."))
             .finally(() => setLoading(false));
-    }, [selectedClassId, examFilter]);
+    }, [selectedClassId, examFilter, semesterFilter]);
 
     const studentName = (entry: LeaderboardEntry) =>
         entry.student
@@ -63,6 +79,24 @@ export default function LeaderboardByClass() {
                         {classes.map((c) => (
                             <option key={c.id} value={c.id}>
                                 {c.class_name} — {c.section}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                <label className="flex max-w-xs flex-col gap-1.5 text-sm">
+                    <span className="font-medium text-ink2">Semester</span>
+                    <select
+                        value={semesterFilter}
+                        onChange={(e) => setSemesterFilter(e.target.value)}
+                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                    >
+                        {availableSemesters.length === 0 && (
+                            <option value="current">current</option>
+                        )}
+                        {availableSemesters.map((semester) => (
+                            <option key={semester} value={semester}>
+                                {semester}
                             </option>
                         ))}
                     </select>

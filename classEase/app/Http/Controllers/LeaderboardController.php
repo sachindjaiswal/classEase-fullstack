@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Classes;
+use App\Models\classes;
 use App\Models\Score;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,14 +12,16 @@ class LeaderboardController extends Controller
 {
     public function getLeaderboardByClass(Request $request, int $classId): JsonResponse
     {
-        $class = Classes::find($classId);
+        $class = classes::find($classId);
 
         if (! $class) {
             return response()->json(['message' => 'Class not found'], 404);
         }
 
         $exam = $request->string('exam')->toString();
+        $semester = $request->string('semester', 'current')->toString();
         $scores = Score::where('class_id', $classId)
+            ->where('semester', $semester)
             ->when($exam !== '', fn ($query) => $query->where('exam_type', $exam))
             ->with('student:id,firstName,middleName,surname')
             ->get(['id', 'student_id', 'marks_obtained', 'total_marks']);
@@ -55,11 +57,14 @@ class LeaderboardController extends Controller
             ->sortByDesc('average_percentage')
             ->values();
 
-        $rank = 1;
-        foreach ($leaderboard as &$entry) {
-            $entry['rank'] = $rank++;
-        }
-        unset($entry);
+        $rank = 0;
+        $leaderboard = $leaderboard
+            ->map(function (array $entry) use (&$rank): array {
+                $entry['rank'] = ++$rank;
+
+                return $entry;
+            })
+            ->values();
 
         return response()->json([
             'message' => 'Leaderboard retrieved successfully',
@@ -68,6 +73,7 @@ class LeaderboardController extends Controller
                 'class_name' => $class->class_name,
             ],
             'exam' => $exam !== '' ? $exam : null,
+            'semester' => $semester,
             'leaderboard' => $leaderboard->values(),
         ], 200);
     }

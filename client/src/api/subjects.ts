@@ -1,8 +1,11 @@
 import api from './axios';
-import type { Subject, SubjectInput } from '@/types';
+import type { Subject, SubjectInput, SubjectFull } from '@/types';
 
 export const getSubjects = () =>
   api.get<{ message: string; subjects: Subject[] }>('/subjects');
+
+export const getSubjectsByClass = (classId: number) =>
+  api.get<{ message: string; subjects: SubjectFull[] }>(`/subjects/class/${classId}`);
 
 export const getSubject = (id: number) =>
   api.get<{ message: string; subject: Subject }>(`/subjects/${id}`);
