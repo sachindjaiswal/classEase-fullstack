@@ -77,7 +77,7 @@ export default function ScoresByClass() {
                     <select
                         value={selectedClassId ?? ''}
                         onChange={(e) => setSelectedClassId(Number(e.target.value))}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     >
                         {classes.map((c) => (
                             <option key={c.id} value={c.id}>
@@ -93,7 +93,7 @@ export default function ScoresByClass() {
                         <select
                             value={semesterFilter}
                             onChange={(e) => setSemesterFilter(e.target.value)}
-                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                            className="input"
                         >
                             <option value="all">All semesters</option>
                             {semesters.map((semester) => (
@@ -111,7 +111,7 @@ export default function ScoresByClass() {
                         <select
                             value={examFilter}
                             onChange={(e) => setExamFilter(e.target.value)}
-                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                            className="input"
                         >
                             <option value="all">All exams</option>
                             {exams.map((exam) => (
@@ -124,7 +124,7 @@ export default function ScoresByClass() {
                 )}
             </div>
 
-            <div className="mt-4 overflow-hidden rounded-lg border border-border bg-surface">
+            <div className="mt-4 overflow-hidden card">
                 {loading && <p className="p-6 text-sm text-muted">Loading scores...</p>}
                 {error && <p className="p-6 text-sm text-danger">{error}</p>}
 

@@ -7,6 +7,7 @@ use App\Models\classes;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Teacher;
+use App\Rules\TenantExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,10 +16,10 @@ class AttendanceController extends Controller
     public function markAttendance(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'class_id' => 'required|exists:classes,id',
+            'class_id' => ['required', TenantExists::make('classes')],
             'date' => 'required|date',
             'attendances' => 'required|array|min:1',
-            'attendances.*.student_id' => 'required|exists:students,id',
+            'attendances.*.student_id' => ['required', TenantExists::make('students')],
             'attendances.*.status' => 'required|in:present,absent,late',
             'attendances.*.remarks' => 'nullable|string|max:255',
         ]);
@@ -54,7 +55,7 @@ class AttendanceController extends Controller
     public function getAttendanceByClass(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'class_id' => 'required|exists:classes,id',
+            'class_id' => ['required', TenantExists::make('classes')],
             'date' => 'required|date',
         ]);
 

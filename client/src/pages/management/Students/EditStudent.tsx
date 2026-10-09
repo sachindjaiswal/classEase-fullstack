@@ -95,7 +95,7 @@ export default function EditStudent() {
                         onChange={(e) =>
                             update('classId', Number(e.target.value))
                         }
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     >
                         <option value="" disabled>Select a class</option>
                         {classes.map((c) => (
@@ -207,8 +207,8 @@ function Field({
                 type={type}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className={`rounded-md border px-3 py-2 text-sm outline-none focus:border-ink ${
-                    error ? 'border-danger' : 'border-border'
+                className={`input ${
+                    error ? 'input-error' : ''
                 }`}
             />
             {error && <span className="text-xs text-danger">{error}</span>}

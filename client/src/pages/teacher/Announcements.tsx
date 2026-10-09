@@ -119,7 +119,7 @@ export default function TeacherAnnouncements() {
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-6 max-w-2xl space-y-4 rounded-lg border border-border bg-surface p-5">
+            <form onSubmit={handleSubmit} className="mt-6 max-w-2xl space-y-4 card p-5">
                 <p className="text-sm font-medium text-ink2">
                     {editingId ? 'Edit announcement' : 'Post an announcement'}
                 </p>
@@ -128,7 +128,7 @@ export default function TeacherAnnouncements() {
                     <select
                         value={form.class_id}
                         onChange={(e) => update('class_id', e.target.value)}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     >
                         <option value="">All classes (general announcement)</option>
                         {classes.map((c) => (
@@ -149,7 +149,7 @@ export default function TeacherAnnouncements() {
                         value={form.title}
                         onChange={(e) => update('title', e.target.value)}
                         placeholder="e.g. Unit test on Friday"
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     />
                     {fieldError('title') && (
                         <span className="text-xs text-danger">{fieldError('title')}</span>
@@ -162,7 +162,7 @@ export default function TeacherAnnouncements() {
                         value={form.description}
                         onChange={(e) => update('description', e.target.value)}
                         rows={4}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink resize-none"
+                        className="input resize-none"
                     />
                 </label>
 
@@ -184,7 +184,7 @@ export default function TeacherAnnouncements() {
                 </p>
             )}
 
-            <div className="mt-6 overflow-hidden rounded-lg border border-border bg-surface">
+            <div className="mt-6 overflow-hidden card">
                 {loading && <p className="p-6 text-sm text-muted">Loading announcements...</p>}
                 {error && <p className="p-6 text-sm text-danger">{error}</p>}
 

@@ -183,7 +183,7 @@ export default function TeacherScores() {
             {error && <p className="mt-6 text-sm text-danger">{error}</p>}
 
             {!loading && classes.length === 0 && (
-                <div className="mt-6 rounded-lg border border-border bg-surface p-10 text-center">
+                <div className="mt-6 card p-10 text-center">
                     <p className="text-sm font-medium text-ink2">No classes assigned</p>
                     <p className="mt-1 text-sm text-muted">
                         You need subjects assigned to a class before you can enter marks.
@@ -199,7 +199,7 @@ export default function TeacherScores() {
                             <select
                                 value={selectedClassId ?? ''}
                                 onChange={(e) => setSelectedClassId(Number(e.target.value))}
-                                className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                className="input"
                             >
                                 {classes.map((c) => (
                                     <option key={c.id} value={c.id}>
@@ -214,7 +214,7 @@ export default function TeacherScores() {
                             <select
                                 value={selectedSubjectId ?? ''}
                                 onChange={(e) => setSelectedSubjectId(Number(e.target.value))}
-                                className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                className="input"
                             >
                                 <option value="">Select a subject</option>
                                 {classSubjects.map((s) => (
@@ -226,7 +226,7 @@ export default function TeacherScores() {
                         </label>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="mt-6 max-w-2xl space-y-4 rounded-lg border border-border bg-surface p-5">
+                    <form onSubmit={handleSubmit} className="mt-6 max-w-2xl space-y-4 card p-5">
                         <p className="text-sm font-medium text-ink2">
                             {editingId ? 'Edit marks' : 'Record marks'}
                         </p>
@@ -236,7 +236,7 @@ export default function TeacherScores() {
                             <select
                                 value={form.student_id}
                                 onChange={(e) => update('student_id', e.target.value)}
-                                className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                className="input"
                             >
                                 <option value="">Select a student</option>
                                 {students.map((s) => (
@@ -256,7 +256,7 @@ export default function TeacherScores() {
                                 <select
                                     value={form.exam_type}
                                     onChange={(e) => update('exam_type', e.target.value)}
-                                    className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                    className="input"
                                 >
                                     {EXAM_TYPES.map((exam) => (
                                         <option key={exam} value={exam}>
@@ -276,7 +276,7 @@ export default function TeacherScores() {
                                     value={form.semester}
                                     onChange={(e) => update('semester', e.target.value)}
                                     placeholder="e.g. Fall 2025"
-                                    className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                    className="input"
                                 />
                                 {fieldError('semester') && (
                                     <span className="text-xs text-danger">{fieldError('semester')}</span>
@@ -290,7 +290,7 @@ export default function TeacherScores() {
                                     min={0}
                                     value={form.marks_obtained}
                                     onChange={(e) => update('marks_obtained', e.target.value)}
-                                    className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                    className="input"
                                 />
                                 {fieldError('marks_obtained') && (
                                     <span className="text-xs text-danger">{fieldError('marks_obtained')}</span>
@@ -304,7 +304,7 @@ export default function TeacherScores() {
                                     min={1}
                                     value={form.total_marks}
                                     onChange={(e) => update('total_marks', e.target.value)}
-                                    className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                    className="input"
                                 />
                                 {fieldError('total_marks') && (
                                     <span className="text-xs text-danger">{fieldError('total_marks')}</span>
@@ -324,7 +324,7 @@ export default function TeacherScores() {
                         </div>
                     </form>
 
-                    <div className="mt-6 overflow-hidden rounded-lg border border-border bg-surface">
+                    <div className="mt-6 overflow-hidden card">
                         {filteredScores.length === 0 ? (
                             <div className="p-10 text-center">
                                 <p className="text-sm font-medium text-ink2">No marks recorded</p>

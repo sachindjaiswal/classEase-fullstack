@@ -80,7 +80,7 @@ export default function AddHomework() {
                     <select
                         value={form.class_id}
                         onChange={(e) => update('class_id', e.target.value)}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     >
                         <option value="">Select a class</option>
                         {classes.map((c) => (
@@ -100,7 +100,7 @@ export default function AddHomework() {
                         value={form.subject_id}
                         onChange={(e) => update('subject_id', e.target.value)}
                         disabled={!form.class_id}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink disabled:opacity-50"
+                        className="input disabled:opacity-50"
                     >
                         <option value="">Select a subject</option>
                         {filteredSubjects.map((s) => (
@@ -121,7 +121,7 @@ export default function AddHomework() {
                         value={form.title}
                         onChange={(e) => update('title', e.target.value)}
                         placeholder="e.g. Chapter 5 exercises"
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     />
                     {fieldError('title') && (
                         <span className="text-xs text-danger">{fieldError('title')}</span>
@@ -134,7 +134,7 @@ export default function AddHomework() {
                         value={form.description}
                         onChange={(e) => update('description', e.target.value)}
                         rows={3}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink resize-none"
+                        className="input resize-none"
                     />
                 </label>
 
@@ -145,7 +145,7 @@ export default function AddHomework() {
                             type="date"
                             value={form.assigned_date}
                             onChange={(e) => update('assigned_date', e.target.value)}
-                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                            className="input"
                         />
                     </label>
 
@@ -155,7 +155,7 @@ export default function AddHomework() {
                             type="date"
                             value={form.due_date}
                             onChange={(e) => update('due_date', e.target.value)}
-                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                            className="input"
                         />
                         {fieldError('due_date') && (
                             <span className="text-xs text-danger">{fieldError('due_date')}</span>

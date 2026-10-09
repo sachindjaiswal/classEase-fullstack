@@ -114,6 +114,13 @@ export default function StudentAttendance() {
         return `${d.toLocaleDateString()}, ${d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
     };
 
+    const formatDay = (iso: string) => {
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime())
+            ? iso
+            : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
     const classLabel = (a: AttendanceAppeal) =>
         a.attendance?.class ? `${a.attendance.class.class_name} ${a.attendance.class.section}` : 'Class';
 
@@ -127,7 +134,7 @@ export default function StudentAttendance() {
 
             {!loading && !error && (
                 <>
-                    <div className="mt-6 overflow-hidden rounded-lg border border-border bg-surface">
+                    <div className="mt-6 overflow-hidden card">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-base text-xs uppercase tracking-wide text-muted">
@@ -148,7 +155,7 @@ export default function StudentAttendance() {
                                     )}
                                     {records.map((r) => (
                                         <tr key={r.id} className="hover:bg-base/60">
-                                            <td className="whitespace-nowrap px-5 py-3 text-ink2">{r.date}</td>
+                                            <td className="whitespace-nowrap px-5 py-3 text-ink2">{formatDay(r.date)}</td>
                                             <td className="whitespace-nowrap px-5 py-3">
                                                 <span
                                                     className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold capitalize"
@@ -187,7 +194,7 @@ export default function StudentAttendance() {
                                 const record = records.find((r) => r.id === expandedId);
                                 if (record) void handleSubmit(e, record);
                             }}
-                            className="mt-4 flex max-w-xl flex-col gap-4 rounded-lg border border-border bg-surface p-5"
+                            className="mt-4 flex max-w-xl flex-col gap-4 card p-5"
                         >
                             <p className="text-sm font-semibold text-ink2">Appeal this record</p>
                             <label className="flex flex-col gap-1.5 text-sm">
@@ -195,7 +202,7 @@ export default function StudentAttendance() {
                                 <select
                                     value={draftStatus}
                                     onChange={(e) => setDraftStatus(e.target.value as AttendanceStatus)}
-                                    className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                    className="input"
                                 >
                                     {STATUS_ORDER.map((s) => (
                                         <option key={s} value={s}>
@@ -215,7 +222,7 @@ export default function StudentAttendance() {
                                     onChange={(e) => setDraftMessage(e.target.value)}
                                     rows={3}
                                     placeholder="Explain why this record is incorrect..."
-                                    className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink resize-none"
+                                    className="input resize-none"
                                 />
                                 {errors.message && (
                                     <span className="text-xs text-danger">{errors.message[0]}</span>
@@ -237,14 +244,14 @@ export default function StudentAttendance() {
                     <div className="mt-8">
                         <h2 className="text-lg font-semibold text-ink2">My appeals</h2>
                         {appeals.length === 0 && (
-                            <p className="mt-4 rounded-md border border-border bg-surface p-6 text-sm text-muted">
+                            <p className="mt-4 card p-6 text-sm text-muted">
                                 You haven't submitted any attendance appeals yet.
                             </p>
                         )}
 
                         <div className="mt-4 flex flex-col gap-3">
                             {appeals.map((a) => (
-                                <div key={a.id} className="rounded-lg border border-border bg-surface p-5">
+                                <div key={a.id} className="card p-5">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <div>
                                             <p className="font-medium text-ink2">

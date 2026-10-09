@@ -6,6 +6,7 @@ use App\Models\classes;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\Timetable;
+use App\Rules\TenantExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,13 +23,13 @@ class TimetableController extends Controller
     public function saveTimetable(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'class_id' => ['required', 'exists:classes,id'],
+            'class_id' => ['required', TenantExists::make('classes')],
             'day' => ['nullable', 'string', 'in:'.implode(',', self::DAYS)],
             'slots' => ['required', 'array'],
             'slots.*.day' => ['required', 'string', 'in:'.implode(',', self::DAYS)],
             'slots.*.period' => ['required', 'string', 'max:50'],
-            'slots.*.subject_id' => ['nullable', 'exists:subjects,id'],
-            'slots.*.teacher_id' => ['nullable', 'exists:teachers,id'],
+            'slots.*.subject_id' => ['nullable', TenantExists::make('subjects')],
+            'slots.*.teacher_id' => ['nullable', TenantExists::make('teachers')],
             'slots.*.start_time' => ['nullable', 'date_format:H:i'],
             'slots.*.end_time' => ['nullable', 'date_format:H:i'],
         ]);
@@ -137,8 +138,8 @@ class TimetableController extends Controller
         $validated = $request->validate([
             'day' => ['sometimes', 'string', 'in:'.implode(',', self::DAYS)],
             'period' => ['sometimes', 'string', 'max:50'],
-            'subject_id' => ['nullable', 'exists:subjects,id'],
-            'teacher_id' => ['nullable', 'exists:teachers,id'],
+            'subject_id' => ['nullable', TenantExists::make('subjects')],
+            'teacher_id' => ['nullable', TenantExists::make('teachers')],
             'start_time' => ['nullable', 'date_format:H:i'],
             'end_time' => ['nullable', 'date_format:H:i'],
         ]);

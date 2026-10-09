@@ -68,7 +68,7 @@ export default function StudentConcerns() {
             <h1 className="text-2xl font-semibold text-ink2">My Concerns</h1>
             <p className="mt-1 text-sm text-muted">Raise a concern and track its status</p>
 
-            <form onSubmit={handleSubmit} className="mt-6 flex max-w-xl flex-col gap-4 rounded-lg border border-border bg-surface p-5">
+            <form onSubmit={handleSubmit} className="mt-6 flex max-w-xl flex-col gap-4 card p-5">
                 <label className="flex flex-col gap-1.5 text-sm">
                     <span className="font-medium text-ink2">Subject</span>
                     <input
@@ -76,7 +76,7 @@ export default function StudentConcerns() {
                         value={form.subject}
                         onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
                         placeholder="e.g. Issue with library books"
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     />
                     {fieldError('subject') && (
                         <span className="text-xs text-danger">{fieldError('subject')}</span>
@@ -89,7 +89,7 @@ export default function StudentConcerns() {
                         value={form.description}
                         onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                         rows={3}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink resize-none"
+                        className="input resize-none"
                     />
                     {fieldError('description') && (
                         <span className="text-xs text-danger">{fieldError('description')}</span>
@@ -110,7 +110,7 @@ export default function StudentConcerns() {
                 {error && <p className="mt-4 text-sm text-danger">{error}</p>}
 
                 {!loading && !error && concerns.length === 0 && (
-                    <p className="mt-4 rounded-md border border-border bg-surface p-6 text-sm text-muted">
+                    <p className="mt-4 card p-6 text-sm text-muted">
                         You haven't submitted any concerns yet.
                     </p>
                 )}
@@ -118,7 +118,7 @@ export default function StudentConcerns() {
                 {!loading && !error && concerns.length > 0 && (
                     <div className="mt-4 flex flex-col gap-3">
                         {concerns.map((c) => (
-                            <div key={c.id} className="rounded-lg border border-border bg-surface p-5">
+                            <div key={c.id} className="card p-5">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div>
                                         <p className="font-medium text-ink2">{c.subject}</p>

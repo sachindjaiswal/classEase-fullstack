@@ -9,7 +9,6 @@ import Top5Bar from '@/components/dashboard/Top5Bar';
 import { CHART_COLORS } from '@/components/charts/palette';
 
 interface SubjectRow {
-    subjectId: number;
     name: string;
     avgs: number;
     count: number;
@@ -25,11 +24,11 @@ export default function SubjectPerformanceAnalytics() {
     const [sortBy, setSortBy] = useState<'avg' | 'count'>('avg');
 
     const subjects = useMemo(() => {
-        const map = new Map<number, SubjectRow>();
+        const map = new Map<string, SubjectRow>();
         allScores.forEach((sc) => {
-            const acc = map.get(sc.subject_id) || {
-                subjectId: sc.subject_id,
-                name: subjectLabel(sc),
+            const name = subjectLabel(sc);
+            const acc = map.get(name) || {
+                name,
                 avgs: 0,
                 count: 0,
                 pass: 0,
@@ -37,7 +36,7 @@ export default function SubjectPerformanceAnalytics() {
             acc.avgs += percentageOf(sc);
             acc.count += 1;
             if (percentageOf(sc) >= 50) acc.pass += 1;
-            map.set(sc.subject_id, acc);
+            map.set(name, acc);
         });
         return Array.from(map.values()).map((r) => ({ ...r, avg: r.count ? Math.round(r.avgs / r.count) : 0 }));
     }, [allScores]);
@@ -67,7 +66,7 @@ export default function SubjectPerformanceAnalytics() {
         <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'avg' | 'count')}
-            className="max-w-[160px] rounded-lg border border-border bg-surface px-2 py-1 text-xs text-ink2 outline-none"
+            className="max-w-[160px] input px-2 py-1 text-xs text-ink2"
         >
             <option value="avg">By average %</option>
             <option value="count">By assessments</option>
@@ -107,7 +106,7 @@ export default function SubjectPerformanceAnalytics() {
                 <div className="p-4 sm:p-5">
                     <DataTable<SubjectRow & { avg: number }>
                         data={ranked}
-                        keyFor={(r) => r.subjectId}
+                        keyFor={(r) => r.name}
                         empty="No scores recorded yet."
                         columns={[
                             {

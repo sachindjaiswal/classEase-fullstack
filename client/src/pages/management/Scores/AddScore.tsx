@@ -96,7 +96,7 @@ export default function AddScore() {
                     <select
                         value={form.class_id}
                         onChange={(e) => update('class_id', e.target.value)}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     >
                         <option value="">Select a class</option>
                         {classes.map((c) => (
@@ -116,7 +116,7 @@ export default function AddScore() {
                         value={form.subject_id}
                         onChange={(e) => update('subject_id', e.target.value)}
                         disabled={!form.class_id}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink disabled:opacity-50"
+                        className="input disabled:opacity-50"
                     >
                         <option value="">Select a subject</option>
                         {filteredSubjects.map((s) => (
@@ -136,7 +136,7 @@ export default function AddScore() {
                         value={form.student_id}
                         onChange={(e) => update('student_id', e.target.value)}
                         disabled={!form.class_id}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink disabled:opacity-50"
+                        className="input disabled:opacity-50"
                     >
                         <option value="">Select a student</option>
                         {filteredStudents.map((s) => (
@@ -155,7 +155,7 @@ export default function AddScore() {
                     <select
                         value={form.exam_type}
                         onChange={(e) => update('exam_type', e.target.value)}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     >
                         {EXAM_TYPES.map((exam) => (
                             <option key={exam} value={exam}>
@@ -176,7 +176,7 @@ export default function AddScore() {
                             value={form.semester}
                             onChange={(e) => update('semester', e.target.value)}
                             placeholder="e.g. Fall 2025"
-                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                            className="input"
                         />
                         {fieldError('semester') && (
                             <span className="text-xs text-danger">{fieldError('semester')}</span>
@@ -190,7 +190,7 @@ export default function AddScore() {
                             min={0}
                             value={form.marks_obtained}
                             onChange={(e) => update('marks_obtained', e.target.value)}
-                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                            className="input"
                         />
                         {fieldError('marks_obtained') && (
                             <span className="text-xs text-danger">{fieldError('marks_obtained')}</span>
@@ -204,7 +204,7 @@ export default function AddScore() {
                             min={1}
                             value={form.total_marks}
                             onChange={(e) => update('total_marks', e.target.value)}
-                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                            className="input"
                         />
                         {fieldError('total_marks') && (
                             <span className="text-xs text-danger">{fieldError('total_marks')}</span>

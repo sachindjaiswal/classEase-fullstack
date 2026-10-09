@@ -1,21 +1,16 @@
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
-} from 'recharts';
-import { AXIS_TICK, CHART_COLORS, fmt, TOOLTIP_STYLE } from '@/components/charts/palette';
+    AXIS_TICK,
+    BAR_TRACK,
+    CHART_COLORS,
+    CURSOR_BAR,
+    GRID_STROKE,
+} from '@/components/charts/palette';
+import ChartTooltip from '@/components/charts/ChartTooltip';
 
 export interface CategoryRow {
     label: string;
     value: number;
-}
-
-function truncateLabel(value: string, max = 12): string {
-    return value.length > max ? `${value.slice(0, max - 1)}…` : value;
 }
 
 export default function CategoryBars({
@@ -23,7 +18,7 @@ export default function CategoryBars({
     height = 220,
     unit = '',
     categoryWidth = 72,
-    color = CHART_COLORS.blue,
+    color = CHART_COLORS.ink,
     domain,
     maxY = 100,
 }: {
@@ -35,29 +30,56 @@ export default function CategoryBars({
     domain?: [number | string, number | string];
     maxY?: number;
 }) {
+    if (data.length === 0) {
+        return (
+            <div
+                className="flex items-center justify-center text-sm text-muted"
+                style={{ height }}
+            >
+                No data yet.
+            </div>
+        );
+    }
+
     const resolved = domain ?? [0, maxY];
+    const longest = data.reduce((m, d) => Math.max(m, d.label.length), 0);
+    const yWidth = Math.min(168, Math.max(categoryWidth, Math.round(longest * 6.4) + 16));
+
     return (
         <div className="min-w-0" style={{ height }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data} layout="vertical" margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.border} horizontal={false} />
-                    <XAxis type="number" domain={resolved} tick={AXIS_TICK} axisLine={false} tickLine={false} />
+            <ResponsiveContainer width="100%" height="100%" minHeight={height}>
+                <BarChart
+                    data={data}
+                    layout="vertical"
+                    margin={{ top: 4, right: 14, left: 0, bottom: 0 }}
+                >
+                    <CartesianGrid strokeDasharray="4 4" stroke={GRID_STROKE} horizontal={false} />
+                    <XAxis
+                        type="number"
+                        domain={resolved}
+                        tick={AXIS_TICK}
+                        axisLine={false}
+                        tickLine={false}
+                        tickMargin={6}
+                    />
                     <YAxis
                         type="category"
                         dataKey="label"
                         tick={{ ...AXIS_TICK, fill: CHART_COLORS.ink2 }}
-                        tickFormatter={truncateLabel}
                         axisLine={false}
                         tickLine={false}
-                        width={categoryWidth}
+                        tickMargin={8}
+                        width={yWidth}
                     />
-                    <Tooltip
-                        cursor={{ fill: 'rgba(30,42,74,0.04)' }}
-                        contentStyle={TOOLTIP_STYLE}
-                        labelStyle={{ color: CHART_COLORS.ink2, fontWeight: 600 }}
-                        formatter={(value) => fmt(Number(value), unit)}
+                    <Tooltip content={<ChartTooltip unit={unit} />} cursor={CURSOR_BAR} />
+                    <Bar
+                        dataKey="value"
+                        name="value"
+                        fill={color}
+                        radius={[0, 6, 6, 0]}
+                        maxBarSize={16}
+                        background={{ fill: BAR_TRACK, radius: 6 }}
                     />
-                    <Bar dataKey="value" name="value" fill={color} radius={[4, 8, 8, 4]} maxBarSize={16} />
                 </BarChart>
             </ResponsiveContainer>
         </div>

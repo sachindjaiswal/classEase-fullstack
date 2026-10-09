@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Tenant;
+use App\Tenant\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,6 +18,19 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        // Every feature test runs inside a default institution: fixtures
+        // created by the test are stamped into it automatically, and the
+        // resolve-tenant middleware stamps them identically during HTTP
+        // calls (the acting user belongs to this same tenant). Tests that
+        // need a second institution create it and rebind the context.
+        $tenant = Tenant::query()->firstOrCreate(
+            ['slug' => 'test-school'],
+            ['name' => 'Test School'],
+        );
+
+        TenantContext::set($tenant->id);
+    })
     ->in('Feature');
 
 /*

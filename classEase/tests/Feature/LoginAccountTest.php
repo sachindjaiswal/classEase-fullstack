@@ -3,6 +3,7 @@
 use App\Models\classes;
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Models\Tenant;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
 
@@ -208,14 +209,30 @@ test('deleting a student revokes their login', function () {
 });
 
 test('public registration can never create an admin account', function () {
+    $tenant = Tenant::query()->where('slug', 'test-school')->firstOrFail();
+
     $this->postJson('/api/register', [
         'name' => 'Sneaky',
         'email' => 'sneaky@example.com',
         'password' => 'secret123',
         'password_confirmation' => 'secret123',
+        'tenant_slug' => $tenant->slug,
     ])->assertCreated();
 
-    expect(User::where('email', 'sneaky@example.com')->value('role'))->toBe('student');
+    expect(User::where('email', 'sneaky@example.com')->value('role'))->toBe('student')
+        ->and(User::where('email', 'sneaky@example.com')->value('tenant_id'))->toBe($tenant->id);
+});
+
+test('registration without a school code is rejected', function () {
+    $this->postJson('/api/register', [
+        'name' => 'No School',
+        'email' => 'noschool@example.com',
+        'password' => 'secret123',
+        'password_confirmation' => 'secret123',
+    ])->assertStatus(422)
+        ->assertJsonValidationErrors(['tenant_slug']);
+
+    expect(User::where('email', 'noschool@example.com')->exists())->toBeFalse();
 });
 
 test('a deleted teacher email can be reused for a new teacher', function () {

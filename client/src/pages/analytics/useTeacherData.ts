@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getTeacherMe, getTeacher, getTeacherSubjects } from '@/api/teachers';
-import { getClasses } from '@/api/classes';
 import { getScoresByClass } from '@/api/scores';
 import type { SchoolClass, SubjectFull, Teacher } from '@/types';
 import type { DatedScore } from '@/pages/analytics/metrics';
@@ -30,16 +29,28 @@ export function useTeacherData(): TeacherData {
         (async () => {
             try {
                 const me = await getTeacherMe();
-                const [teacherRes, subjectsRes, classesRes] = await Promise.all([
+                const [teacherRes, subjectsRes] = await Promise.all([
                     getTeacher(me.data.id),
                     getTeacherSubjects(me.data.id),
-                    getClasses(),
                 ]);
                 const subjectList = subjectsRes.data.subjects;
                 if (cancelled) return;
                 setTeacher(teacherRes.data);
                 setSubjects(subjectList);
-                setClasses(classesRes.data.classes);
+
+                const classMap = new Map<number, SchoolClass>();
+                subjectList.forEach((s) => {
+                    if (s.class && !classMap.has(s.class.id)) {
+                        classMap.set(s.class.id, {
+                            id: s.class.id,
+                            class_name: s.class.class_name,
+                            section: s.class.section ?? '',
+                            room_no: s.class.room_no ?? '',
+                            class_teacher: null,
+                        });
+                    }
+                });
+                setClasses(Array.from(classMap.values()));
 
                 if (!subjectList || subjectList.length === 0) return;
                 const classIds = Array.from(new Set(subjectList.map((s) => s.classId)));

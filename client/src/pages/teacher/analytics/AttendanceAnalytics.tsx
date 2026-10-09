@@ -66,7 +66,7 @@ export default function TeacherAttendanceAnalytics() {
         <select
             value={selectedClassId ?? ''}
             onChange={(e) => setSelectedClassId(Number(e.target.value))}
-            className="max-w-[200px] rounded-lg border border-border bg-surface px-2 py-1 text-xs text-ink2 outline-none"
+            className="max-w-[200px] input px-2 py-1 text-xs text-ink2"
         >
             {Array.from(new Set(subjects.map((s) => s.classId))).map((cid) => {
                 const c = classes.find((k) => k.id === cid);
@@ -84,7 +84,7 @@ export default function TeacherAttendanceAnalytics() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="max-w-[160px] rounded-lg border border-border bg-surface px-2 py-1 text-xs text-ink2 outline-none"
+            className="max-w-[160px] input px-2 py-1 text-xs text-ink2"
         />
     );
 

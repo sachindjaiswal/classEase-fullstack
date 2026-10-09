@@ -1,5 +1,6 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { CHART_COLORS, fmt, TOOLTIP_STYLE } from '@/components/charts/palette';
+import { CHART_COLORS } from '@/components/charts/palette';
+import ChartTooltip from '@/components/charts/ChartTooltip';
 
 export interface DonutSlice {
     name: string;
@@ -19,26 +20,36 @@ export default function PassDonut({
     height?: number;
     colors?: string[];
 }) {
+    const total = data.reduce((sum, slice) => sum + (Number(slice.value) || 0), 0);
+
     return (
         <div className="relative" style={{ height }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={height}>
                 <PieChart>
                     <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        labelStyle={{ color: CHART_COLORS.ink2, fontWeight: 600 }}
-                        formatter={(value) => fmt(Number(value), '%')}
+                        content={
+                            <ChartTooltip
+                                valueFormatter={(v) =>
+                                    total > 0 ? `${v} · ${Math.round((v / total) * 100)}%` : String(v)
+                                }
+                            />
+                        }
                     />
                     <Pie
                         data={data}
                         dataKey="value"
                         nameKey="name"
+                        startAngle={90}
+                        endAngle={-270}
                         innerRadius="68%"
                         outerRadius="92%"
-                        paddingAngle={3}
-                        strokeWidth={0}
+                        paddingAngle={2}
+                        cornerRadius={6}
+                        stroke="#FFFFFF"
+                        strokeWidth={2}
                     >
-                        {data.map((entry) => (
-                            <Cell key={entry.name} fill={colors[data.indexOf(entry) % colors.length]} />
+                        {data.map((entry, i) => (
+                            <Cell key={`${entry.name}-${i}`} fill={colors[i % colors.length]} />
                         ))}
                     </Pie>
                 </PieChart>

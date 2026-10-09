@@ -14,25 +14,41 @@ use App\Http\Controllers\ScoreController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\TenantController;
 use App\Http\Controllers\TimetableController;
 use Illuminate\Support\Facades\Route;
 
 // ====================
 // Authentication
 // ====================
-
 Route::post('/login', [AuthController::class, 'login']);
+
 Route::post('/register', [AuthController::class, 'register']);
+
+Route::get('/tenants', [TenantController::class, 'signupList']);
 
 // ====================
 // Protected Routes
 // ====================
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'resolve-tenant'])->group(function () {
 
     // Authentication — all roles
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // ====================
+    // Platform admin (super-admin, no tenant): institution management
+    // ====================
+
+    Route::middleware('role:platform_admin')->prefix('platform')->group(function () {
+        Route::get('/tenants', [TenantController::class, 'index']);
+        Route::post('/tenants', [TenantController::class, 'store']);
+        Route::post('/tenants/{id}/admins', [TenantController::class, 'storeAdmin']);
+        Route::delete('/users/{id}', [TenantController::class, 'destroyUser']);
+        Route::put('/tenants/{id}', [TenantController::class, 'update']);
+        Route::delete('/tenants/{id}', [TenantController::class, 'destroy']);
+    });
 
     // ====================
     // Admin-only: management (dashboard stats, CRUD on all entities)

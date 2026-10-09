@@ -51,14 +51,18 @@ Full stack runs via Docker (services in `docker-compose.yml` at repo root):
 
 | Service | Host port | Role |
 |---|---|---|
-| `mysql` | **3307** | MySQL 8.0, DB `classease`, user `classease`/`secret` |
-| `redis` | **6380** | Cache, sessions, queue |
+| `mysql` | **3308** | MySQL 8.0, DB `classease`, user `classease`/`secret` |
+| `redis` | **6381** | Cache, sessions, queue |
 | `app` | 9000 (internal) | Laravel PHP-FPM |
 | `queue` | — | `php artisan queue:work --sleep=3 --tries=3 --max-time=3600` |
-| `client` | **5174** | Vite dev server |
-| `nginx` | **8080** | Reverse proxy → Laravel PHP-FPM |
+| `client` | **5175** | Vite dev server |
+| `nginx` | **8081** | Reverse proxy → Laravel PHP-FPM |
 
-> **Host ports retuned 2026-08-19**: XAMPP MySQL on 3306, IIS on 80, local Vite on 5173. Inside Docker network, services use standard ports (mysql:3306, redis:6379, nginx:80).
+> **Ports/containers re-tuned 2026-10-08 for coexistence**: all containers run as `classease-local-*`
+> (avoid clashing with the OTHER project's `classease-*` containers), image is `classease-local-app`,
+> and host ports are 3308/6381/8081/5175. XAMPP MySQL holds 3306, IIS holds 80, local Vite holds
+> 5173, and the other `classease-fullstack` Docker stack holds 3307/6380/8080/5174. Inside Docker
+> network, services use standard ports (mysql:3306, redis:6379, nginx:80).
 
 ```
 docker compose up -d --build    # First run: installs deps + builds assets automatically
@@ -71,16 +75,16 @@ docker compose exec app php artisan db:seed
 **Key design decisions**:
 - Env vars in `docker-compose.yml` override `.env` (DB → MySQL + Redis at runtime; no `.env` edit needed). APP_KEY is hardcoded in compose (matches local `.env`).
 - Named volumes (`php-vendor`, `php-node-modules`, `client-node-modules`) keep Linux deps separate from Windows host — never mount host `vendor/`/`node_modules/`.
-- `app` and `queue` share the `classease-app` image + `php-vendor` volume; `queue` uses `image: classease-app` — do NOT give it its own `build:`.
+- `app` and `queue` share the `classease-local-app` image + `php-vendor` volume; `queue` uses `image: classease-local-app` — do NOT give it its own `build:`.
 - `app` healthcheck is `kill -0 1` (PHP image has neither curl nor pgrep; php-fpm is pid 1).
 - `client/vite.config.ts` reads `VITE_API_TARGET` env var (default `http://localhost:8000` locally, `http://nginx` in Docker). Sets `host: '0.0.0.0'` so Vite is reachable from Docker.
-- Network flow: Browser → `localhost:8080` (nginx) → `/api/*` → Laravel; `localhost:5174` (client) → `/api/*` proxied by Vite → `http://nginx` → Laravel.
+- Network flow: Browser → `localhost:8081` (nginx) → `/api/*` → Laravel; `localhost:5175` (client) → `/api/*` proxied by Vite → `http://nginx` → Laravel.
 - `.dockerignore` at repo root excludes vendor, node_modules, .env, git.
 
 **Docker gotchas**:
 - Local `.env` uses SQLite; Docker overrides to MySQL. Don't change local `.env` to MySQL unless you also run locally via `php artisan serve`.
 - The `app` healthcheck is `kill -0 1` (PHP image has neither curl nor pgrep; php-fpm runs as pid 1).
-- Host ports 3307/6380/8080/5174 are mapped ones — 3306/6379/80/5173 are taken by local services (XAMPP MySQL, IIS, local Vite). The local standalone client on 5173 proxies to `http://localhost:8000`, which requires a backend there (local `php artisan serve` is impossible on PHP 8.2).
+- Host ports 3308/6381/8081/5175 are mapped ones — 3306/3307/6379/6380/80/5173/5174 are taken by local services (XAMPP MySQL, the OTHER `classease-fullstack` Docker stack, IIS, local Vite). The local standalone client on 5173 proxies to `http://localhost:8000`, which requires a backend there (local `php artisan serve` is impossible on PHP 8.2). Our stack for this repo: nginx on **8081**, client on **5175**, connected to its own `classease-local-*` containers.
 - `phpverif` is a one-off container (`docker compose run --no-deps -d --name phpverif app`) used for PHPStan + artisan test. Recreate if missing with the same command.
 
 ## Verification Order

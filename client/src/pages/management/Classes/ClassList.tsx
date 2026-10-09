@@ -49,7 +49,7 @@ export default function ClassList() {
                 </Link>
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-lg border border-border bg-surface">
+            <div className="mt-6 overflow-hidden card">
                 {loading && <p className="p-6 text-sm text-muted">Loading classes…</p>}
                 {error && <p className="p-6 text-sm text-danger">{error}</p>}
 

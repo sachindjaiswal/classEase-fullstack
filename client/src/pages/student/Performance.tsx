@@ -64,7 +64,7 @@ function SemesterSelect({
             <select
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                className="input"
             >
                 {semesters.length === 0 && <option value="current">current</option>}
                 {semesters.map((semester) => (
@@ -280,7 +280,7 @@ export default function StudentPerformance() {
                             : 'Compare yourself with classmates and track your own progress'}
                     </p>
                 </div>
-                <div className="flex gap-1 rounded-lg border border-border bg-surface p-1">
+                <div className="flex gap-1 card p-1">
                     {tabs.map((t) => (
                         <button
                             key={t.id}
@@ -319,7 +319,7 @@ export default function StudentPerformance() {
                                                         Number(e.target.value),
                                                     )
                                                 }
-                                                className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                                className="input"
                                             >
                                                 <option value="">
                                                     Select a class
@@ -341,7 +341,7 @@ export default function StudentPerformance() {
                                                 onChange={(e) =>
                                                     setStudentAId(Number(e.target.value))
                                                 }
-                                                className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                                className="input"
                                             >
                                                 <option value="">
                                                     Pick a student
@@ -363,7 +363,7 @@ export default function StudentPerformance() {
                                                 onChange={(e) =>
                                                     setStudentBId(Number(e.target.value))
                                                 }
-                                                className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                                className="input"
                                             >
                                                 <option value="">
                                                     Pick a student
@@ -388,7 +388,7 @@ export default function StudentPerformance() {
                                             onChange={(e) =>
                                                 setStudentBId(Number(e.target.value))
                                             }
-                                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                            className="input"
                                         >
                                             <option value="">
                                                 Pick a classmate
@@ -414,7 +414,7 @@ export default function StudentPerformance() {
                             )}
 
                             {!headToHeadLoading && !headToHead && (
-                                <div className="rounded-lg border border-border bg-surface p-10 text-center">
+                                <div className="card p-10 text-center">
                                     <p className="text-sm font-medium text-ink2">
                                         Pick two students to compare
                                     </p>
@@ -428,7 +428,7 @@ export default function StudentPerformance() {
 
                             {!headToHeadLoading && headToHead && (
                                 <>
-                                    <div className="rounded-lg border border-border bg-surface p-5">
+                                    <div className="card p-5">
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                                                 <div className="min-w-[10rem]">
@@ -473,7 +473,7 @@ export default function StudentPerformance() {
                                     </div>
 
                                     {headToHead.results.length === 0 ? (
-                                        <div className="rounded-lg border border-border bg-surface p-10 text-center">
+                                        <div className="card p-10 text-center">
                                             <p className="text-sm font-medium text-ink2">
                                                 No comparable scores yet
                                             </p>
@@ -485,7 +485,7 @@ export default function StudentPerformance() {
                                     ) : (
                                         <>
                                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-                                                <div className="rounded-lg border border-border bg-surface p-5">
+                                                <div className="card p-5">
                                                     <p className="text-sm font-medium text-muted">
                                                         Subjects compared
                                                     </p>
@@ -493,7 +493,7 @@ export default function StudentPerformance() {
                                                         {headToHead.summary.head_to_head_subjects}
                                                     </p>
                                                 </div>
-                                                <div className="rounded-lg border border-border bg-surface p-5">
+                                                <div className="card p-5">
                                                     <p className="text-sm font-medium text-muted">
                                                         {headToHead.studentA.firstName} wins
                                                     </p>
@@ -501,7 +501,7 @@ export default function StudentPerformance() {
                                                         {headToHead.summary.studentA_wins}
                                                     </p>
                                                 </div>
-                                                <div className="rounded-lg border border-border bg-surface p-5">
+                                                <div className="card p-5">
                                                     <p className="text-sm font-medium text-muted">
                                                         {headToHead.studentB.firstName} wins
                                                     </p>
@@ -509,7 +509,7 @@ export default function StudentPerformance() {
                                                         {headToHead.summary.studentB_wins}
                                                     </p>
                                                 </div>
-                                                <div className="rounded-lg border border-border bg-surface p-5">
+                                                <div className="card p-5">
                                                     <p className="text-sm font-medium text-muted">
                                                         Ties
                                                     </p>
@@ -519,7 +519,7 @@ export default function StudentPerformance() {
                                                 </div>
                                             </div>
 
-                                            <div className="overflow-hidden rounded-lg border border-border bg-surface">
+                                            <div className="overflow-hidden card">
                                                 <div className="overflow-x-auto">
                                                     <table className="w-full text-left text-sm">
                                                         <thead className="bg-base text-xs uppercase tracking-wide text-muted">
@@ -618,7 +618,7 @@ export default function StudentPerformance() {
                                         onChange={(e) =>
                                             setSelectedSubjectId(Number(e.target.value))
                                         }
-                                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                        className="input"
                                     >
                                         <option value="">Select a subject</option>
                                         {subjects.map((s) => (
@@ -634,7 +634,7 @@ export default function StudentPerformance() {
                                     <select
                                         value={examFilter}
                                         onChange={(e) => setExamFilter(e.target.value)}
-                                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                        className="input"
                                     >
                                         <option value="all">All exams</option>
                                         {EXAM_TYPES.map((exam) => (
@@ -652,7 +652,7 @@ export default function StudentPerformance() {
                                 />
                             </div>
 
-                            <div className="overflow-hidden rounded-lg border border-border bg-surface">
+                            <div className="overflow-hidden card">
                                 {comparisonLoading && (
                                     <p className="p-6 text-sm text-muted">
                                         Loading comparison...
@@ -755,7 +755,7 @@ export default function StudentPerformance() {
                                     <select
                                         value={examFilter}
                                         onChange={(e) => setExamFilter(e.target.value)}
-                                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                                        className="input"
                                     >
                                         <option value="all">All exams</option>
                                         {EXAM_TYPES.map((exam) => (
@@ -779,7 +779,7 @@ export default function StudentPerformance() {
                             {rankError && <p className="text-sm text-danger">{rankError}</p>}
 
                             {!rankLoading && !rankError && rankEntries.length === 0 && (
-                                <div className="rounded-lg border border-border bg-surface p-10 text-center">
+                                <div className="card p-10 text-center">
                                     <p className="text-sm font-medium text-ink2">
                                         No scores to rank yet
                                     </p>
@@ -798,7 +798,7 @@ export default function StudentPerformance() {
                                         );
                                         return (
                                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                                <div className="rounded-lg border border-border bg-surface p-5">
+                                                <div className="card p-5">
                                                     <p className="text-sm font-medium text-muted">
                                                         Your rank
                                                     </p>
@@ -819,7 +819,7 @@ export default function StudentPerformance() {
                                                             : 'No scores recorded for this semester/exam'}
                                                     </p>
                                                 </div>
-                                                <div className="rounded-lg border border-border bg-surface p-5">
+                                                <div className="card p-5">
                                                     <p className="text-sm font-medium text-muted">
                                                         Your average
                                                     </p>
@@ -836,7 +836,7 @@ export default function StudentPerformance() {
                                                         </p>
                                                     )}
                                                 </div>
-                                                <div className="rounded-lg border border-border bg-surface p-5">
+                                                <div className="card p-5">
                                                     <p className="text-sm font-medium text-muted">
                                                         Class topper
                                                     </p>
@@ -855,7 +855,7 @@ export default function StudentPerformance() {
                                         );
                                     })()}
 
-                                    <div className="overflow-hidden rounded-lg border border-border bg-surface">
+                                    <div className="overflow-hidden card">
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-left text-sm">
                                                 <thead className="bg-base text-xs uppercase tracking-wide text-muted">
@@ -945,7 +945,7 @@ export default function StudentPerformance() {
                             )}
 
                             {!gapsLoading && gaps && gaps.gaps.length === 0 && (
-                                <div className="rounded-lg border border-border bg-surface p-10 text-center">
+                                <div className="card p-10 text-center">
                                     <p className="text-sm font-medium text-ink2">
                                         No data to analyse yet
                                     </p>
@@ -960,7 +960,7 @@ export default function StudentPerformance() {
                                 gaps.gaps.map((gap) => (
                                     <div
                                         key={gap.subject.id}
-                                        className="rounded-lg border border-border bg-surface p-5"
+                                        className="card p-5"
                                     >
                                         <div className="flex items-center justify-between">
                                             <h3 className="text-base font-semibold text-ink2">
@@ -1016,7 +1016,7 @@ export default function StudentPerformance() {
                             {!progressLoading &&
                                 progress &&
                                 progress.progress.length === 0 && (
-                                    <div className="rounded-lg border border-border bg-surface p-10 text-center">
+                                    <div className="card p-10 text-center">
                                         <p className="text-sm font-medium text-ink2">
                                             No progress data yet
                                         </p>
@@ -1030,7 +1030,7 @@ export default function StudentPerformance() {
                             {!progressLoading && progress && progress.progress.length > 0 && (
                                 <>
                                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                        <div className="rounded-lg border border-border bg-surface p-5">
+                                        <div className="card p-5">
                                             <p className="text-sm font-medium text-muted">
                                                 Overall change
                                             </p>
@@ -1046,7 +1046,7 @@ export default function StudentPerformance() {
                                                     : `${progress.summary.overall_delta >= 0 ? '+' : ''}${progress.summary.overall_delta.toFixed(2)}%`}
                                             </p>
                                         </div>
-                                        <div className="rounded-lg border border-border bg-surface p-5">
+                                        <div className="card p-5">
                                             <p className="text-sm font-medium text-muted">
                                                 Improved subjects
                                             </p>
@@ -1054,7 +1054,7 @@ export default function StudentPerformance() {
                                                 {progress.summary.improved_subjects}
                                             </p>
                                         </div>
-                                        <div className="rounded-lg border border-border bg-surface p-5">
+                                        <div className="card p-5">
                                             <p className="text-sm font-medium text-muted">
                                                 Declined subjects
                                             </p>
@@ -1064,7 +1064,7 @@ export default function StudentPerformance() {
                                         </div>
                                     </div>
 
-                                    <div className="overflow-hidden rounded-lg border border-border bg-surface">
+                                    <div className="overflow-hidden card">
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-left text-sm">
                                                 <thead className="bg-base text-xs uppercase tracking-wide text-muted">

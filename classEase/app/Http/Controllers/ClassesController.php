@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ClassesResource;
 use App\Models\classes;
+use App\Rules\TenantExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -45,7 +46,7 @@ class ClassesController extends Controller
     public function createClass(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'class_teacher' => 'nullable|exists:teachers,id',
+            'class_teacher' => ['nullable', TenantExists::make('teachers')],
             'class_name' => 'required|string|max:255',
             'section' => 'required|string|max:255',
             'room_no' => 'required|string|max:255',
@@ -71,7 +72,7 @@ class ClassesController extends Controller
         }
 
         $validated = $request->validate([
-            'class_teacher' => 'nullable|exists:teachers,id',
+            'class_teacher' => ['nullable', TenantExists::make('teachers')],
             'class_name' => 'sometimes|string|max:255',
             'section' => 'sometimes|string|max:255',
             'room_no' => 'sometimes|string|max:255',

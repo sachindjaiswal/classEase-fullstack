@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Score;
 use App\Models\Student;
+use App\Rules\TenantExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,9 +13,9 @@ class ScoreController extends Controller
     public function addScore(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'student_id' => 'required|exists:students,id',
-            'subject_id' => 'required|exists:subjects,id',
-            'class_id' => 'required|exists:classes,id',
+            'student_id' => ['required', TenantExists::make('students')],
+            'subject_id' => ['required', TenantExists::make('subjects')],
+            'class_id' => ['required', TenantExists::make('classes')],
             'exam_type' => 'required|string|max:255',
             'semester' => 'required|string|max:255',
             'marks_obtained' => 'required|integer|min:0|lte:total_marks',
@@ -112,9 +113,9 @@ class ScoreController extends Controller
         }
 
         $validated = $request->validate([
-            'student_id' => 'sometimes|exists:students,id',
-            'subject_id' => 'sometimes|exists:subjects,id',
-            'class_id' => 'sometimes|exists:classes,id',
+            'student_id' => ['sometimes', TenantExists::make('students')],
+            'subject_id' => ['sometimes', TenantExists::make('subjects')],
+            'class_id' => ['sometimes', TenantExists::make('classes')],
             'exam_type' => 'sometimes|string|max:255',
             'semester' => 'sometimes|string|max:255',
             'marks_obtained' => 'sometimes|integer|min:0|lte:total_marks',

@@ -7,6 +7,10 @@ import Register from '@/pages/auth/Register';
 import Unauthorized from '@/pages/Unauthorized';
 
 import ManagementDashboard from '@/pages/management/Dashboard';
+import PlatformDashboard from '@/pages/platform/Dashboard';
+import InstitutionList from '@/pages/platform/InstitutionList';
+import InstitutionForm from '@/pages/platform/InstitutionForm';
+import AddAdmin from '@/pages/platform/AddAdmin';
 import TeacherList from '@/pages/management/Teachers/TeacherList';
 import AddTeacher from '@/pages/management/Teachers/AddTeacher';
 import EditTeacher from '@/pages/management/Teachers/EditTeacher';
@@ -71,6 +75,20 @@ export default function AppRouter() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
+
+        {/* Platform admin */}
+        <Route element={<ProtectedRoute allow={['platform']} />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/platform/dashboard" element={<PlatformDashboard />} />
+            <Route path="/platform/institutions" element={<InstitutionList />} />
+            <Route path="/platform/institutions/new" element={<InstitutionForm />} />
+            <Route
+                path="/platform/institutions/:id/admins/new"
+                element={<AddAdmin />}
+            />
+            <Route path="/platform/institutions/:id/edit" element={<InstitutionForm />} />
+          </Route>
+        </Route>
 
         {/* Management */}
         <Route element={<ProtectedRoute allow={['management']} />}>

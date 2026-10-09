@@ -117,12 +117,13 @@ export default function ManagementDashboard() {
     );
 
     const popularCourses = useMemo(() => {
-        const subjectMap: Record<number, { name: string; count: number; avg: number; total: number }> = {};
+        const subjectMap: Record<string, { name: string; count: number; avg: number; total: number }> = {};
         allScores.forEach((sc) => {
-            const entry = subjectMap[sc.subject_id] || { name: subjectLabel(sc), count: 0, avg: 0, total: 0 };
+            const name = subjectLabel(sc);
+            const entry = subjectMap[name] || { name, count: 0, avg: 0, total: 0 };
             entry.count += 1;
             entry.total += percentageOf(sc);
-            subjectMap[sc.subject_id] = entry;
+            subjectMap[name] = entry;
         });
         return Object.values(subjectMap)
             .map((e) => ({ ...e, avg: e.count ? Math.round(e.total / e.count) : 0 }))
@@ -156,12 +157,13 @@ export default function ManagementDashboard() {
     }, [allScores]);
 
     const top5Subjects = useMemo(() => {
-        const subjectMap: Record<number, { name: string; sum: number; count: number }> = {};
+        const subjectMap: Record<string, { name: string; sum: number; count: number }> = {};
         allScores.forEach((sc) => {
-            const entry = subjectMap[sc.subject_id] || { name: subjectLabel(sc), sum: 0, count: 0 };
+            const name = subjectLabel(sc);
+            const entry = subjectMap[name] || { name, sum: 0, count: 0 };
             entry.sum += percentageOf(sc);
             entry.count += 1;
-            subjectMap[sc.subject_id] = entry;
+            subjectMap[name] = entry;
         });
         return Object.values(subjectMap)
             .map((e) => ({ label: e.name, value: e.count ? Math.round(e.sum / e.count) : 0 }))

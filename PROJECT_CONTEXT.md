@@ -3,7 +3,27 @@
 > **This file is the persistent checkpoint.** Read this first every session to re-establish
 > project state. It records what exists, what has been verified, and how to run everything.
 > Keep it in sync with reality after any significant change (new migrations, models, routes,
-> Docker changes, or verified baseline updates). Last verified: **2026-10-08**.
+> Docker changes, or verified baseline updates). Last verified: **2026-10-09**.
+
+## 📌 NEXT SESSION — Pending Tasks (updated 2026-10-09)
+
+> Start here. The HIGH-priority "demo data split" backlog item is **DONE** (items 1–3 below);
+> the only open action is deciding whether to commit. Full details lower in this file.
+
+1. **✅ FIXED (2026-10-09) — demo-data split.** The MySQL volume was reset and the enriched
+   `ClassEaseTestDataSeeder` now seeds ONE tenant (`classease-demo`) with everything:
+   3 classes, 12 subjects, 144 scores (two semesters), 75 timetable slots, 5 announcements,
+   2 concerns, 6 homeworks, 30 attendance rows. Old split description preserved in the
+   "KNOWN OPEN ISSUE" block lower down. See "Work Completed (2026-10-09)" at the end.
+2. **✅ Strays gone** — the volume reset removed orphan admin 25 `admin2b@testinst2.com`, legacy
+   `teacher4@classease.com` / `student7@classease.com` and the `default` tenant entirely.
+3. **✅ Re-ran the Verification Order (2026-10-09)** — Pint PASS, PHPStan `[OK] No errors`,
+   tests **49 passed / 174 assertions**; live smoke confirmed all pages show data. Re-run after any
+   future change and hard-refresh (Ctrl+F5) the client at `http://localhost:5175`.
+4. **Decide about committing** — STILL uncommitted (multi-tenancy + platform UI + delete-user +
+   compose port retune + UI polish + the 2026-10-09 seeder enrichment). Nothing was pushed.
+5. **Anything below this line remains the standing baseline** — see Docker table (3308/6381/8081/5175,
+   `classease-local-*`), test accounts, routes, and the "Session 2" hand-off notes.
 
 ## Project at a Glance
 
@@ -99,16 +119,30 @@ and displayed another student's data — pre-existing bug, now fixed).
 
 ## Git State
 
-- Branch: `main`, HEAD: `04706a7` **"Fixed attendance and updated UI"** — the 2026-10-08 attendance
-  appeals backend (migration, model, controller, routes, tests) was committed by the user mid-session.
+- Branch: `main`, HEAD: `8a3ff9f` **"Fixed Attendance and UI Changed"** (2026-10-08 attendance
+  appeals + a UI commit; prior `04706a7`).
 - **Remote**: `origin` was **re-pointed 2026-10-08** from `https://github.com/shaikhfarhan10/ClassEase.git`
   (wrong — "a major mistake per user") to **`https://github.com/sachindjaiswal/classEase-fullstack.git`**.
   All pushes/pulls now go to the classEase-fullstack repo.
-- **Uncommitted as of 2026-10-08**: `AttendanceCorrectionController.php` (Pint + PHPStan + SQLite-portable
-  `CASE` ordering fixes made after HEAD was committed) + the whole client appeals feature
-  (`types`, `api/attendanceAppeals.ts`, student `Attendance.tsx`, management/teacher `AttendanceAppeals.tsx`,
-  router + sidebar entries).
-- History (commit `04706a7`) sits on top of `fefce97` (`frontend deisgn till 06-09-2026`).
+- **Uncommitted as of 2026-10-08 (end of session)**: the whole **multi-tenancy feature** (see
+  "Work Completed (2026-10-08) — Multi-tenancy" at the end): new `Tenant`/`TenantContext`/
+  `TenantScope`/`BelongsToTenant`/`TenantExists`/`ResolveTenant`/`TenantController` files, 4 new
+  migrations, all 12 domain models + 9 controllers + `routes/api.php`/`bootstrap/app.php`/
+  `AppServiceProvider`/`AuthController`/seeder/`Pest.php` edits, `TenancyTest`, client
+  `Register.tsx`/`AuthContext.tsx` school-code field, **the platform-admin UI** (`client`):
+  new `pages/platform/` (Dashboard, InstitutionList, InstitutionForm, AddAdmin), `api/platform.ts`,
+  `'platform'` role via `mapRole(platform_admin)`, `/platform/*` routes, sidebar platform links,
+  **+ `POST /platform/tenants/{id}/admins` (adds admins) & platform-admin can list/create them**.
+  (The attendance-appeals leftovers that were uncommitted before are now inside HEAD.)
+- **2026-10-08 (later session)**: compose re-tuned to coexist with the other project
+  (`classease-local-*` containers, image `classease-local-app`, ports mysql 3308 / redis 6381 /
+  nginx 8081 / client 5175) and our FULL stack was brought UP for the first time this session —
+  `docker compose up -d --build` → migrate + `db:seed --force` → verified **live**: platform login
+  at `http://localhost:8081` + SPA proxy on `http://localhost:5175``, `platform@classease.com`/
+  `ClassEase@123` works, plus a working **Delete-User feature** (`DELETE /platform/users/{id}` +
+  per-admin Delete buttons in `client` InstitutionList; new TenancyTest tests; total 49 tests).
+  All of this is still uncommitted.
+- History sits on top of `fefce97` (`frontend deisgn till 06-09-2026`).
 
 ## Verified Green Baseline (2026-08-19, updated 2026-09-07)
 
@@ -120,9 +154,18 @@ All of the following pass. **Run in this order.**
 | JS format | `npm run format:check` | PASS |
 | JS types | `npm run types:check` | PASS |
 | PHP lint | `& "C:\xampp\php\php.exe" vendor\bin\pint --test` | PASS |
-| PHPStan (lvl 7) | `docker exec phpverif php vendor/bin/phpstan analyse --no-progress` | PASS (0 errors, was 20) |
-| Tests | see "Running Tests" below | 20 passed (81 assertions) |
-| Full-stack smoke | `docker compose up -d` + register/login/me/classes via :8080, client SPA + proxy via :5174 | PASS (2026-08-19) |
+| PHPStan (lvl 7) | disposable container (see Docker gotchas) | PASS (0 errors) |
+| Tests | see "Running Tests" below | **49 passed (174 assertions)** (2026-10-08) |
+| Full-stack smoke | `docker compose up -d --build` + migrate + seed; login/me/classes via :8081, SPA + API proxy on :5175 | **PASS live (2026-10-08)** — see "Full-stack smoke test (2026-10-08)" |
+
+### Full-stack smoke test (2026-10-08) — OUR stack, live
+
+With our whole stack up (mysql 3308, redis 6381, nginx 8081, client 5175, all
+`classease-local-*`), migrated + seeded against fresh MySQL:
+- `POST http://localhost:8081/api/login` with `platform@classease.com`/`ClassEase@123` → 200 + token (role `platform_admin`).
+- `GET /api/me` with token → `platform_admin` user; `GET /api/platform/tenants` → returns the seeded institutions.
+- `POST http://localhost:5175/api/login` (Vite proxy → nginx → Laravel) → 200 (admin@classease.com works).
+- **Delete-user flow tested live**: created `temp@classease.com` → `DELETE /api/platform/users/{id}` → "User deleted"; that account can no longer log in.
 
 ### Full-stack smoke test (2026-08-19)
 
@@ -156,9 +199,12 @@ docker exec -e APP_ENV=testing -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: `
   -e MAIL_MAILER=array -e BROADCAST_CONNECTION=null phpverif php artisan test
 ```
 
-Current tests: `tests/Unit/ExampleTest` (that true is true) and
-`tests/Feature/ExampleTest` (login requires credentials → POST /api/login 422;
-health check responds → GET /up 200).
+Current tests: `tests/Unit/ExampleTest`, `tests/Feature/ExampleTest`,
+`LoginAccountTest` (10, incl. 2 registration/tenant_slug), `DashboardFeedTest` (2),
+`TeacherWorkflowTest` (4), `LeaderboardTest` (2), `AttendanceCorrectionTest` (10),
+`TenancyTest` (18 — cross-tenant isolation, middleware 403s, platform-admin tenant CRUD +
+add-admin + **delete-user (2026-10-08)**, public sign-up list).
+**Total: 49 passed, 174 assertions (2026-10-08).**
 
 ## Docker Setup
 
@@ -166,15 +212,17 @@ Services (`docker-compose.yml` at repo root):
 
 | Service | Container | Host port | Role |
 |---|---|---|---|
-| `mysql` | classease-mysql | **3307** | MySQL 8.0, DB `classease`, user `classease`/`secret`, root `rootsecret` |
-| `redis` | classease-redis | **6380** | Cache, sessions, queue |
-| `app` | classease-app | 9000 (internal) | Laravel PHP-FPM (build context `docker/php/Dockerfile`) |
-| `queue` | classease-queue | — | `php artisan queue:work --sleep=3 --tries=3 --max-time=3600` |
-| `client` | classease-client | **5174** | Vite dev server (build context `docker/client/Dockerfile`) |
-| `nginx` | classease-nginx | **8080** | Reverse proxy → Laravel PHP-FPM |
+| `mysql` | classease-local-mysql | **3308** | MySQL 8.0, DB `classease`, user `classease`/`secret`, root `rootsecret` |
+| `redis` | classease-local-redis | **6381** | Cache, sessions, queue |
+| `app` | classease-local-app | 9000 (internal) | Laravel PHP-FPM (build context `docker/php/Dockerfile`) |
+| `queue` | classease-local-queue | — | `php artisan queue:work --sleep=3 --tries=3 --max-time=3600` |
+| `client` | classease-local-client | **5175** | Vite dev server (build context `docker/client/Dockerfile`) |
+| `nginx` | classease-local-nginx | **8081** | Reverse proxy → Laravel PHP-FPM |
 
-> Host ports retuned 2026-08-19: XAMPP MySQL holds 3306, IIS holds 80, local Vite holds 5173.
-> Inside the Docker network services still use standard ports (mysql:3306, redis:6379, nginx:80).
+> Containers **re-tuned 2026-10-08 for coexistence**: renamed to `classease-local-*`, image
+> `classease-local-app`, host ports 3308/6381/8081/5175. The OTHER `classease-fullstack` Docker stack
+> owns 3307/6380/8080/5174 (and its own `classease-*` container names), XAMPP MySQL owns 3306, IIS
+> owns 80, local Vite owns 5173. Inside the Docker network services still use standard ports.
 
 - `docker compose up --build` first run installs deps + builds assets automatically
   (`docker/php/entrypoint.sh`: creates `.env` from `.env.example` + APP_KEY if missing,
@@ -183,12 +231,12 @@ Services (`docker-compose.yml` at repo root):
   separate from the Windows host. Never mount host `vendor/`/`node_modules/`.
 - Env vars in `docker-compose.yml` override `.env` (MySQL + Redis at runtime; no `.env` edit needed).
   APP_KEY is hardcoded in compose to match the local `.env`.
-- `app` and `queue` share the `classease-app` image + `php-vendor` volume; `queue` uses `image: classease-app`,
+- `app` and `queue` share the `classease-local-app` image + `php-vendor` volume; `queue` uses `image: classease-local-app`,
   do NOT give it its own `build:`.
 - `app` healthcheck is `kill -0 1` (PHP image has neither curl nor pgrep; php-fpm is pid 1).
 - `client/vite.config.ts` reads `VITE_API_TARGET` for proxy target (default `http://localhost:8000`
   locally, `http://nginx` in Docker) and sets `host: '0.0.0.0'`.
-- Network flow: Browser → `localhost:8080` (nginx) → `/api/*` → Laravel; `localhost:5174` (client)
+- Network flow: Browser → `localhost:8081` (nginx) → `/api/*` → Laravel; `localhost:5175` (client)
   → `/api/*` proxied by Vite → `http://nginx` → Laravel.
 - `.dockerignore` at repo root excludes vendor, node_modules, .env, git.
 
@@ -197,17 +245,12 @@ Services (`docker-compose.yml` at repo root):
 - **`phpverif`** — a one-off container created for verification
   (`docker compose run --no-deps -d --name phpverif app`). Used for PHPStan + artisan test. Recreate if missing
   with the same command (confirm entrypoint finishes before running phpstan).
-- **⚠️ VERIFICATION-ENV DISCOVERY (2026-10-08)**: the existing `phpverif` container and the running Docker
-  stack (`classease-app/client/nginx/queue/mysql`, ports :8080/:5174/:3307/6380) **bind-mount a DIFFERENT
-  project** — `C:\Users\Shaikh Farhan\classEase-fullstack\Backend` + `...\classEase-fullstack\client`
-  (git remote `sachindjaiswal/classEase-fullstack`). They do **NOT** serve `/var/www/html` from this repo, so
-  `docker exec phpverif ...` / `:8080` smoke tests validate the *other* project's code, and newly created
-  files never appear in it (only edits to already-existing files show up). To verify **our** code, use a
-  disposable container that mounts our `classEase/` folder onto the shared `classease-app` image
-  (bypass the entrypoint so nothing is rewritten):
-  `docker run --rm --entrypoint php -v "C:\<abs path>\classEase:/var/www/html" -w /var/www/html classease-app <pint|phpstan|artisan test>`
-  with the SQLite in-memory env overrides for tests (see "Running Tests"). Verified 2026-10-08: Pint PASS
-  (84 files), PHPStan lvl 7 `[OK] No errors`, **30 tests / 110 assertions PASS** (incl. new `AttendanceCorrectionTest` 10).
+- **✅ RE-VERIFIED 2026-10-08 (afternoon)**: despite an earlier confusing note, `phpverif` DOES mount
+  **OUR** `classEase/` (`/var/www/html` bind mount + `classease_php-*` volumes, image `classease-app`).
+  This session ran `docker exec phpverif ...` against our repo — Pint (96 files), PHPStan
+  `[OK] No errors`, and **49 tests / 174 assertions PASS** (incl. all new delete-user tests). It is the
+  correct container for verifying OUR code. If it ever mounts the other project again, recreate it with
+  `docker compose run --no-deps -d --name phpverif app` from OUR repo root.
 - Local `.env` uses SQLite; Docker overrides to MySQL. Don't change local `.env` to MySQL.
 - Ports 3306/6379/80/5173 must be free; local `php artisan serve` on 8000 doesn't conflict.
 - Docker Desktop path: `C:\Program Files\Docker\Docker\Docker Desktop.exe` (daemon v29.4.0).
@@ -249,6 +292,13 @@ Services (`docker-compose.yml` at repo root):
 - `Announcement` — `class_id` (nullable FK → classes, null = general/all classes), `title`, `description` (nullable), `posted_by` (nullable FK → users). `belongsTo` classes, User (poster).
 - `Timetable` — `class_id` (FK → classes), `day` (string: Monday–Friday), `period` (string, e.g. `1st`), `subject_id` (nullable FK → subjects), `teacher_id` (nullable FK → teachers), `start_time`/`end_time` (nullable times). Unique constraint on (`class_id`, `day`, `period`). `belongsTo` classes, Subject, Teacher.
 - `Concern` — `student_id` (FK → students), `subject` (string), `description` (nullable text), `status` (enum: open/in_progress/resolved, default open), `admin_reply` (nullable text), `resolved_by` (nullable FK → users). `belongsTo` Student, User (resolver).
+- **Multi-tenancy (2026-10-08)**: ALL 12 domain models above (incl. `User`, `AttendanceCorrection`) use
+  the `App\Models\Concerns\BelongsToTenant` trait — registers the `TenantScope` global scope (reads
+  filtered by `TenantContext::id()`, no filter when no context = platform admin/console) and hooks
+  `creating`/`updating` to FORCE `tenant_id` from the context (payload can't override it). All 12 have
+  `tenant_id` in `$fillable`.
+- `Tenant` — `name`, `slug` (DB-unique), `SoftDeletes`, `hasMany` users + admins (role admin).
+  **Deliberately NOT tenant-scoped itself** — it is the boundary every other model is scoped by.
 
 Relation generics are declared via PHPDoc `@return` tags using `$this` for the declaring model,
 e.g. `@return HasMany<Subject, $this>`. **PHP 8.3/8.4 — never put generics in native signatures**
@@ -285,12 +335,40 @@ reads the trait `@use` tag on the use-clause PHPDoc).
 - `TimetableController` — `saveTimetable` (bulk upsert a class's full grid: deletes removed (day, period) slots then updateOrCreate each submitted slot; teacher_id auto-fills from the subject if omitted), `getTimetableByClass`, `getTimetableByTeacher` (entries where teacher_id matches), `updateTimetable`, `deleteTimetable`. `DAYS` const = Monday–Friday.
 - `ConcernController` — `createConcern` (student raises; student_id resolved from the authenticated user's `user_id`, status forced `open`), `getConcerns` (all, newest first), `getConcernsByStudent`, `getConcern`, `updateConcern` (status + admin_reply; auto-sets `resolved_by` when resolving, clears it otherwise), `deleteConcern`. Students are scoped to their own concerns via `isStudentForbidden` (403 otherwise).
 - `ComparisonController` — `bySubject` (`GET /comparison/subject/{classId}/{subjectId}`, optional `?exam=&semester=`), `gaps` (per-subject gap to top-3 avg & class avg, sorted desc), `progress` (current vs latest other semester per subject + summary), `headToHead` (`GET /comparison/headtohead/{studentA}/{studentB}` — per-subject A% vs B%, delta, leader, wins summary; students must be one of the pair **and same class**, admin/teacher any two). Students can only access their own `gaps`/`progress` via `isStudentForbidden`; admin/teacher any student. Uses flat Eloquent `Collection<int, Score>` + `@param` docblocks for PHPStan.
+- `TenantController` — platform-admin institution CRUD (`GET/POST /platform/tenants`,
+  `PUT/DELETE /platform/tenants/{id}`): `index` (all tenants + users_count/admins_count/admins),
+  `store` (creates tenant + its first `admin` user in a transaction), `update` (name/slug; slug
+  validated with plain `Rule::unique` — matches the DB hard unique so a soft-deleted slug can't 500
+  on reuse), `destroy` (soft delete only), `storeAdmin` (`POST /platform/tenants/{id}/admins` —
+  adds a 2nd+ admin, email `Rule::unique` ignore-soft-deleted), **`destroyUser`
+  (`DELETE /platform/users/{id}` — soft-deletes any non-platform admin, revokes their tokens;
+  422: can't delete self, another platform admin, or a school's last admin)**. Access gated by
+  `role:platform_admin`.
+- **`TenantExists` rule** (`app/Rules/TenantExists.php`) — wraps `Rule::exists()` with `where('tenant_id', context)` when a context is active. **Every `exists:` validation rule in ALL controllers now uses it** (29 usages across Announcement/Attendance/AttendanceCorrection/Classes/Homework/Score/Student/Subject/Timetable) — plain `exists:` runs on the query builder and would accept another school's ids.
 - `Resources/ClassesResource.php` — has `@property-read` docblock.
 
 ### Routes
 
 - `routes/api.php` — public: `POST /api/login`, `POST /api/register` (register now **always**
-  creates a `student` account — role is forced server-side, never trusted from the client).
+  creates a `student` account — role is forced server-side, never trusted from the client — and
+  **requires `tenant_slug`** (a school code) so the account lands in exactly one institution;
+  validated with `Rule::exists('tenants','slug')->whereNull('deleted_at')`), + **`GET /api/tenants`**
+  (public sign-up list: active institutions' id/name/slug, ordered by name — drives the Register page
+  **school dropdown** added 2026-10-08).
+- **Whole protected group is `['auth:sanctum', 'resolve-tenant']`** (2026-10-08) — `ResolveTenant`
+  middleware (`resolve-tenant` alias in `bootstrap/app.php`) binds `TenantContext` from the
+  authenticated user BEFORE any route middleware runs:
+  - `role === 'platform_admin'` → context = null (sees everything; platform routes only).
+  - `tenant_id === null` → **403** "Your account is not linked to an institution."
+  - tenant **soft-deleted** → **403** "Your institution has been deactivated."
+  - else context = user's tenant → every downstream Eloquent query is scoped.
+  - `terminate()` clears the context (no leak in long-lived workers).
+- **Platform group** (inside the protected group): `role:platform_admin` + `prefix('platform')` →
+  `GET/POST /platform/tenants`, **`POST /platform/tenants/{id}/admins` (add a 2nd+ admin to an
+  institution, 2026-10-08)**, **`DELETE /platform/users/{id}` (delete ANY user — soft delete, revokes
+  Sanctum tokens; guards: no platform admins, no self, no last-admin-of-a-school, 2026-10-08)**,
+  `PUT/DELETE /platform/tenants/{id}`. No other route is reachable by
+  a platform_admin (they have no tenant-scoped role group).
 - Rest under `auth:sanctum` with **role-based access control** via the `role` middleware alias
   (`App\Http\Middleware\RoleMiddleware`, registered in `bootstrap/app.php`). Three groups:
   - **`role:admin`** (management): `/dashboard/stats`, `/classes` (all CRUD), `/students` (POST),
@@ -323,31 +401,53 @@ reads the trait `@use` tag on the use-clause PHPDoc).
 - `routes/web.php` — only `/student-form` view (plus removed unused AuthController import).
 - `bootstrap/app.php` — health check at `/up`; registers `role` middleware alias.
 
-### Migrations (18)
+### Migrations (25)
 
 `users` (incl. `deleted_at` from `2026_09_07_000002_add_soft_deletes_to_users_table`), `cache`, `jobs`, `teachers`, `classes`, `students`, `personal_access_tokens`,
 `subjects`, `add_email_to_teachers`, `add_email_password_to_students`
 (both untracked), `attendances`, `homeworks`, `scores`,
-`add_semester_to_scores_table` (untracked, 2026-09-07), `announcements`, `timetables`, `concerns`. Columns per model above; teachers/students/users use `softDeletes`.
-`add_semester_to_scores_table` adds `semester` (default `current`) to `scores` and swaps the unique
-constraint to `(student_id, subject_id, exam_type, semester)` — idempotent (`hasColumn`/`hasIndex`),
-adds the new unique before dropping the old (MySQL Error 1553 fix).
+`add_semester_to_scores_table` (untracked, 2026-09-07), `announcements`, `timetables`, `concerns`,
+`2026_09_07_000003_allow_email_reuse_after_delete`, `2026_09_08_000001_make_homeworks_assigned_by_nullable`,
+`2026_10_08_000001_create_attendance_corrections_table`, and the 4 tenancy migrations:
+`2026_10_08_000002_create_tenants_table` (tenants: name, slug unique, softDeletes),
+`2026_10_08_000003_add_tenant_id_to_domain_tables` (nullable `tenant_id` FK → tenants, cascadeOnDelete,
+index on ALL 12 domain tables: users/teachers/classes/students/subjects/attendances/homeworks/scores/
+timetables/announcements/concerns/attendance_corrections),
+`2026_10_08_000004_add_platform_admin_role_to_users_table` (users.role enum gains `platform_admin`),
+`2026_10_08_000005_backfill_tenant_id_to_default_tenant` (assigns pre-tenancy NULL rows to a `default`
+tenant — **only creates it when there is something to backfill**, so fresh installs/tests stay clean;
+`down()` nulls those stamps but never deletes the tenant row — cascade would destroy data).
 
 ### Factories / Seeders
 
 - `UserFactory` — for User (updated).
-- `ClassEaseTestDataSeeder` + `DatabaseSeeder` — seed Users (students/teachers/admin) + classes.
+- `ClassEaseTestDataSeeder` + `DatabaseSeeder` — **enriched 2026-10-09**: seeds the whole demo for
+  ONE tenant (`classease-demo`): platform admin + tenant admin + 3 teachers + 6 students, 3 classes,
+  **12 subjects** (4 per class, spread across the 3 teachers), **scores** for every student × every
+  class subject × 3 exam types × 2 semesters (`Fall 2025` + `current`) = 144 rows, a full
+  **Monday–Friday 5-period timetable** per class (75 slots), 5 **announcements** (2 general + 1/class),
+  2 **concerns** (one open, one resolved), 6 **homeworks** and 5 days of **attendance** per student.
+  Every row explicitly stamps `tenant_id` (the `BelongsToTenant` hook is a no-op in console where no
+  context is set). Idempotent via `updateOrCreate`.
 
 ### Test accounts (password for all: `ClassEase@123`)
 
 | Role | Email |
 |---|---|
+| **platform_admin (new 2026-10-08)** | `platform@classease.com` (tenant_id = null; manages institutions — **full UI: Platform Overview + Institutions**; can create schools, add/delete admins, delete users) |
 | admin | `admin@classease.com` |
 | teacher | `teacher1@classease.com`, `teacher2@classease.com`, `teacher3@classease.com` |
 | student | `student1@classease.com` … `student6@classease.com` |
 
-Seeder is `updateOrCreate`-based (idempotent). Note: `teachers.email`, `students.email`,
+Demo institution slug (tenant code): **`classease-demo`** ("ClassEase Demo School") — required as
+`tenant_slug` when self-registering a student.
+
+Seeder is `updateOrCreate`-based (idempotent) and stamps `tenant_id` explicitly on every row it
+creates (tenant `classease-demo` + platform/admin/teacher/student users + Teacher/Student/Class rows).
+Note: `teachers.email`, `students.email`,
 `students.password` are NOT NULL — any future edits to the seeder must set them.
+`DatabaseSeeder`'s `WithoutModelEvents` trait is **inert** (it only provides an unused helper) —
+the `BelongsToTenant` stamping hooks DO fire during `db:seed`.
 
 ## Frontend
 
@@ -1379,3 +1479,210 @@ backend** (not just the UI).
 - Awareness: earlier "phpverif"/:8080 reverifications happened against the *other* project and were
   misleading; the current baseline above is genuinely **our** repo.
 
+## Work Completed (2026-10-08) — Multi-tenancy (institution isolation)
+
+Full single-database multi-tenancy: every school ("tenant"/institution) shares one schema, rows are
+isolated by a `tenant_id` column + a global Eloquent scope bound per request from the authenticated
+user. Started in an earlier (uncommitted) session; **finished and verified this session**.
+
+### Architecture (all under `classEase/`)
+
+| Piece | File | Behaviour |
+|---|---|---|
+| Context holder | `app/Tenant/TenantContext.php` | container singleton: `set(?int)` / `id()` / `has()` / `clear()` |
+| Global scope | `app/Models/Scopes/TenantScope.php` | `where tenant_id = context` **only when a context is set** (platform admin/console see everything); `@implements Scope<Model>` for PHPStan |
+| Trait | `app/Models/Concerns/BelongsToTenant.php` | registers the scope + `creating`/`updating` hooks that FORCE `tenant_id` from the context (payload can never move a row across tenants); provides `tenant()` relation |
+| Middleware | `app/Http/Middleware/ResolveTenant.php` | after `auth:sanctum`: platform_admin → null context; `tenant_id` null → 403; tenant soft-deleted → 403 "institution deactivated"; else bind. `terminate()` clears the context |
+| Validation rule | `app/Rules/TenantExists.php` | `exists:` scoped to the current tenant (plain `exists:` ignores Eloquent scopes) |
+| Model | `app/Models/Tenant.php` | name + slug, SoftDeletes, `users()`/`admins()`; not itself scoped |
+| Platform CRUD | `app/Http/Controllers/TenantController.php` | index/store (tenant + first admin in a transaction)/update/destroy (soft) |
+
+- **12 domain models** (User, Student, Teacher, classes, Subject, Attendance, AttendanceCorrection,
+  Homework, Score, Announcement, Timetable, Concern) use the trait + `tenant_id` fillable.
+- **All 4 tenancy migrations**: tenants table; nullable indexed `tenant_id` FK on all 12 domain
+  tables; `platform_admin` role enum; conditional backfill of legacy NULL rows to a `default` tenant.
+- Seeder: demo tenant `classease-demo` + `platform@classease.com` (tenant_id null) + explicit
+  `tenant_id` stamps on every seeded row.
+
+### Fixes made this session (the in-flight work had bugs)
+
+| Fix | Detail |
+|---|---|
+| **Fatal missing imports** | `HomeworkController` referenced `Teacher` and `ScoreController` referenced `Student` without `use` (both imports had been dropped for the unused `User` import) → `Class not found` 500s on homework/score routes. Also removed the unused `User` imports. |
+| **11 unscoped `exists:` rules** | Classes/Student/Subject/Timetable controllers still used plain `exists:` → converted to `TenantExists::make(...)` (now 29 usages, zero plain `exists:` left in controllers) |
+| **Soft-deleted institution kept working** | `ResolveTenant` now 403s users whose tenant row is trashed |
+| **Slug unique mismatch** | `TenantController` validated slug with `->whereNull('deleted_at')` while the DB unique is hard → SQLSTATE 23000 (500) on reuse of a deleted slug; now plain `Rule::unique` (422 instead of 500) |
+| **TenantContext leak** | `ResolveTenant::terminate()` now calls `TenantContext::clear()` |
+| **Backfill on empty DB** | first version always created a `default` tenant (broke `Tenant::first()` assumptions in tests); now only creates it when there is actually a NULL row to backfill |
+| **PHPStan (3 errors)** | `User::$tenant_id`/`$role` missing `@property`; `TenantScope` missing `@implements Scope<Model>`; `ForeignKeyDefinition::index()` undefined → split into a separate `$table->index('tenant_id')` |
+| **Broken client registration** | backend hard-requires `tenant_slug` but `client/src/pages/auth/Register.tsx` + `context/AuthContext.tsx` never sent it → **every self-registration 422'd**. Added a "School Code" field (state/validate/server-error display) and a `tenant_slug` param on `register()` |
+
+### New tests — `tests/Feature/TenancyTest.php` (10)
+
+Cross-tenant read isolation (list excludes foreign rows, get/update/delete foreign → 404), cross-tenant
+write rejection (subject/class rows referencing another school's ids → 422 on classId/teacherId/class_teacher),
+write stamping (API-created row carries caller's tenant), `ResolveTenant` 403s (no institution / soft-deleted
+institution), platform-admin list/create institution + first admin, **platform-admin adds a 2nd admin per
+institution (venant-scoped, duplicate in-use email → 422)**, platform admin sees all tenants,
+tenant admin blocked from `/platform/*`, **public sign-up list exposes active institutions and hides
+soft-deleted ones**. Plus the 2 registration tests in `LoginAccountTest`
+(`tenant_slug` required; stamped tenant asserted). **14 tenancy tests**.
+
+### Verification (2026-10-08) — all PASS, against OUR repo (disposable container, see Docker gotchas)
+
+| Check | Result |
+|---|---|
+| Pint (`vendor\bin\pint --test --parallel`) | PASS |
+| JS lint / format / types (classEase) | PASS |
+| PHPStan lvl 7 (disposable container) | **`[OK] No errors`** |
+| Tests (SQLite in-memory overrides) | **45 passed, 164 assertions** (was 30/110) |
+| Client `npm run build` (tsc + vite) | PASS (746 modules) |
+| **Live HTTP smoke test** | PASS (see below) |
+
+### Live HTTP smoke test (2026-10-08, disposable `apitest` container: SQLite file + `php -S :8001`)
+
+Exercised the real `migrate:fresh --seed` + actual HTTP stack end-to-end:
+- Health `/up` 200; `platform@classease.com` login (platform_admin); platform list → 1 seeded tenant.
+- `POST /platform/tenants` created schools `test-school-a` + `test-school-b` (each with its first admin).
+- School A admin created a teacher + class → row stamped with A's tenant.
+- School B admin list → **0 classes**; B `DELETE /classes/{A's id}` and `GET /classes/{A's id}` → **404**; B read of A's teacher / demo's subject by id → **404**; B `subjects/class/{demo id}` → **scoped empty list (no leak)**.
+- Self-registration with `tenant_slug: test-school-b` → role student, `/me` OK; bogus slug → **422**.
+- B admin `GET /platform/tenants` → **403**; platform sees all 3 tenants.
+- Platform soft-deleted school A → admin A's next request → **403** ("institution deactivated"); student B unaffected.
+- Platform admin on a tenant-scoped route (`/classes`) → 403 (role middleware excludes platform_admin — by design).
+
+### Known gaps / deliberately not done
+
+- **Platform-admin UI is DONE (added same session)**: `client/src/pages/platform/` — Dashboard,
+  InstitutionList (table w/ users + admin accounts, add-admin/edit/delete), InstitutionForm (create w/
+  first admin account, edit name+code), **AddAdmin** (adds a 2nd+ admin to an institution). `mapRole('platform_admin')
+  → 'platform'` so the account signs in to `client` and lands on `/platform/dashboard` (new `/platform/*`
+  routes + sidebar links).
+- **Live-MySQL migrations + seed WERE run (2026-10-08, Session 2)** against OUR own `mysql` volume
+  (host port 3308): all 5 tenancy migrations applied, `ClassEaseTestDataSeeder` seeded. The OTHER
+  project's stack was **shut down** this session (its ports 8080/5174/3307/6380 are free again);
+  restart it at any time with `docker compose up -d` from `C:\Users\Shaikh Farhan\classEase-fullstack`.
+- Open registration into any institution by school code is a deliberate product decision.
+
+## Work Completed (2026-10-08, Session 2) � Live Stack, Delete-User, UI Polish ?? READ FIRST
+
+### What happened (in order)
+
+1. **Diagnosed "credentials invalid"**: localhost:8000 was NOT Laravel (a fingerprint-reader service
+   sgibiosrv.exe); what the user was logging into was the **OTHER project's** stack at :8080/:5174
+   (mounted from C:\Users\Shaikh Farhan\classEase-fullstack, git remote sachindjaiswal/classEase-fullstack),
+   whose DB has no tenancy accounts. Our repo had **no live backend** (local PHP is 8.2; app needs 8.3+).
+2. **Re-tuned our docker-compose.yml to coexist** with the other project (which was running same
+   container names + ports). Now: containers classease-local-*, image classease-local-app (NOT the
+   shared classease-app tag), host ports **mysql 3308 / redis 6381 / nginx 8081 / client 5175**.
+   See Docker table above.
+3. **Brought our FULL stack up live for the first time**: docker compose up -d --build ? migrate --force
+   ? db:seed --force on fresh MySQL. **Live-verified**: platform login at 8081 + client proxy at 5175,
+   platform@classease.com/ClassEase@123 works; SPA loads at http://localhost:5175.
+4. **Delete-User feature**: DELETE /api/platform/users/{id} (TenantController::destroyUser) �
+   soft-deletes any non-platform user, revokes Sanctum tokens; 422 guards: self / another platform_admin /
+   last admin of a school (a school must keep =1 admin). UI: per-admin **Delete** buttons in
+   client/src/pages/platform/InstitutionList.tsx; deleteUser() in client/src/api/platform.ts.
+   **Live-tested**: created 	emp@classease.com ? deleted it ? login afterwards rejected. **5 new
+   TenancyTest tests** ? suite now **49 tests / 174 assertions PASS**; Pint PASS (96 files); PHPStan [OK] No errors.
+5. **Multi-admin + new-institution live test**: created Test Institution Two (id 3) with first admin
+   dmin2@testinst2.com then a 2nd admin dmin2b@testinst2.com (user ids 24, 25) � both logged in
+   correctly, bound to tenant 3.
+6. **Cleanup**: deleted admin 24 + institution 3 (soft delete); admin 25 left orphaned & **locked out**
+   (403 "institution deactivated"). Wiped nothing else.
+7. **Shut down the OTHER project's stack** (docker compose down from C:\Users\Shaikh Farhan\classEase-fullstack).
+   Ports 8080/5174/3307/6380 are now FREE. **Restartable** with docker compose up -d there. Our stack
+   untouched and healthy.
+8. **UI polish (client only, built + PASS)**: Login + Register (navy gradient backdrop w/ gold/teal radial
+   glow, gold top-border card, gold "CE" brand tile, focus rings, gradient submit button, **demo-credentials
+   hint box** on Login, gold links); Sidebar (gold brand mark, avatar initials, gold active-state left bar,
+   bordered logout button); Platform Dashboard (accented stat cards w/ inline SVG icons, hover lift);
+   InstitutionList (gold-accent institution cell, admin **pill chips with Delete button**, header colspan fix).
+
+### ?? KNOWN OPEN ISSUE � demo data split across two tenants (next session's job)
+
+Our mysql-data named volume was NOT empty � it carried legacy pre-tenancy data from an earlier run.
+The tenancy backfill migration then assigned those NULL-tenant rows to a **"ClassEase Default"** tenant,
+so live data is now split:
+
+| Tenant | Contents |
+|---|---|
+| **1 "ClassEase Default"** (slug default) | legacy: 3 classes (ids 1-3), **12 subjects**, 4 scores, 35 timetables, 1 announcement, 1 concern, 1 teacher + 1 student (incl. their users) |
+| **2 "ClassEase Demo School"** (classease-demo, the real demo) | admin@, teacher1-3, student1-6, 3 classes (ids 4-6) � **NO subjects/scores/timetables/announcements** |
+
+Net effect: the demo school shows **empty Subjects / Scores / Timetable / Announcements** pages.
+Extra stray accounts also exist: 	eacher4@classease.com, student7@classease.com (legacy leftovers,
+in tenant 1). **Current seeder creates NO subjects** � so a plain re-seed will NOT fix it.
+
+**Recommended fix (tomorrow):** extend ClassEaseTestDataSeeder to also create the 12 subjects (+
+scores/timetables/announcements) for the demo tenant, then reset: docker compose down &&
+docker volume rm classease_mysql-data && docker compose up -d + migrate + seed. The OLD full-featured
+seeder is in git: git show fefce97:classEase/database/seeders/ClassEaseTestDataSeeder.php
+(pre-tenancy), or mine the legacy rows out of tenant 1 (subjects reference classes 1-3 etc.).
+Alternatively migrate tenant-1 legacy rows into tenant 2 and delete the default tenant.
+
+> **✅ RESOLVED 2026-10-09** — the split described above no longer exists. The `classease_mysql-data`
+> volume was removed and recreated, all migrations re-run, and the enriched `ClassEaseTestDataSeeder`
+> seeded a single `classease-demo` tenant with subjects/scores/timetables/announcements/concerns/homework/
+> attendance. Verified live (see "Work Completed (2026-10-09)" at the end).
+
+### State to hand off
+
+- App URLs: **client http://localhost:5175** (open this one), backend http://localhost:8081.
+- Accounts (password ClassEase@123): platform platform@classease.com, school admin
+  dmin@classease.com (id 1), teachers 	eacher1..3@classease.com, students student1..6@classease.com.
+- All work this session is **UNCOMMITTED** (multi-tenancy + platform UI from Session 1 + delete-user +
+  compose retune + UI polish). Nothing pushed to remote.
+- phpverif container re-verified 2026-10-08: **it DOES mount OUR classEase/** (volume classease_php-*);
+  the earlier doubt was wrong. Recreate if ever missing: docker compose run --no-deps -d --name phpverif app.
+
+## Work Completed (2026-10-09) — Demo data split FIXED (rich seed for the demo tenant)
+
+Closes the HIGH-priority backlog item from 2026-10-08: the demo school
+(`classease-demo`, what `admin@classease.com` uses) had classes but **no subjects/scores/
+timetables/announcements**, so those pages looked empty, while the rich legacy data sat in a
+separate `ClassEase Default` (`default`) tenant.
+
+### Root cause recap
+The old `ClassEaseTestDataSeeder` never created subjects (or any academic rows), so re-seeding
+could not fix it; and the pre-tenancy rows lived in the legacy `default` tenant from the
+`2026_10_08_000005_backfill_tenant_id_to_default_tenant` migration. `git show
+fefce97:...ClassEaseTestDataSeeder.php` also had no subjects — there is no historical
+full-featured seeder to recover.
+
+### Fix
+- **`classEase/database/seeders/ClassEaseTestDataSeeder.php` enriched** (all rows explicitly
+  `tenant_id`-stamped; console context is null so the `BelongsToTenant` hook leaves them alone):
+  - **12 subjects** — 4 per class (Physics/Mathematics/Chemistry/English), spread across the 3 teachers.
+  - **Scores** — every student × every subject of their class × 3 exam types × 2 semesters
+    (`Fall 2025`, `current`) = **144 rows**, deterministic marks (55–95) so leaderboards /
+    comparisons / progress have variety.
+  - **Timetables** — a full Monday–Friday, 5-period grid per class = **75 slots**, subject +
+    teacher auto-linked.
+  - **Announcements** — 2 general + 1 per class = **5**.
+  - **Concerns** — **2** (one `open`, one `resolved` with reply + resolver).
+  - **Homeworks** — **6** (2 per class, correct owning teacher, due dates relative to today).
+  - **Attendance** — today + previous 4 days per student = **30** rows (present/late/absent mix).
+- **DB reset** — `docker compose down` → `docker volume rm classease_mysql-data` (the OTHER
+  project's `classease-fullstack_mysql-data` untouched) → `docker compose up -d` →
+  `migrate --force` → `db:seed --force`. The backfill migration now creates **no** `default` tenant
+  (nothing to backfill), so only `classease-demo` remains.
+
+### Verification (2026-10-09) — all PASS
+| Check | Result |
+|---|---|
+| Seeder dry-run (throwaway SQLite `migrate:fresh --seed`) | PASS — all rows in tenant 1, platform user tenant NULL |
+| Pint (`phpverif` `pint --test`) | PASS |
+| PHPStan lvl 7 (`phpverif`) | **`[OK] No errors`** |
+| Tests (SQLite in-memory overrides) | **49 passed, 174 assertions** (baseline unchanged) |
+| Live MySQL after reset | 1 tenant `classease-demo`; classes 3, subjects 12, scores 144, timetables 75, announcements 5, concerns 2, homeworks 6, attendances 30 |
+| Live HTTP (:8081) admin | subjects 12, announcements 5, timetable(class 1) 25, homework(class 1) 2, scores(class 1) 48, concerns 2, leaderboard OK |
+| Live HTTP teacher1 | `/teacher/me` OK, timetable 25, subjects/class/1 = 4, scores/class/1 = 48, homework/class/1 = 2 |
+| Live HTTP student1 | me id 1 class 1, subjects 4, scores 24, timetable 25, announcements 3, progress 4 |
+| SPA + proxy (`:5175`) | `/` 200; `/api/login` (proxy → nginx → Laravel) role `admin` |
+
+### Notes
+- Account numeric ids were reset by the fresh volume (platform=1, admin=2, teachers=3-5, students=6-11).
+- Seeder remains `updateOrCreate`-idempotent; attendance/homework dates are relative to "today"
+  so they will refresh each day the seeder is re-run.
+- All still **uncommitted**.

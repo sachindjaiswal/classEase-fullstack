@@ -113,7 +113,7 @@ export default function ClassForm() {
                                 e.target.value ? Number(e.target.value) : null,
                             )
                         }
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     >
                         <option value="">Unassigned</option>
                         {teachers.map((t) => (
@@ -168,8 +168,8 @@ function Field({
                 type="text"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className={`rounded-md border px-3 py-2 text-sm outline-none focus:border-ink ${
-                    error ? 'border-danger' : 'border-border'
+                className={`input ${
+                    error ? 'input-error' : ''
                 }`}
             />
             {error && <span className="text-xs text-danger">{error}</span>}

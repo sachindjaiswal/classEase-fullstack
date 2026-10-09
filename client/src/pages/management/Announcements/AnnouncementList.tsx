@@ -66,7 +66,7 @@ export default function AnnouncementList() {
                 <select
                     value={audience}
                     onChange={(e) => setAudience(e.target.value)}
-                    className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                    className="input"
                 >
                     <option value="all">All announcements</option>
                     {classes.map((c) => (
@@ -77,7 +77,7 @@ export default function AnnouncementList() {
                 </select>
             </label>
 
-            <div className="mt-4 overflow-hidden rounded-lg border border-border bg-surface">
+            <div className="mt-4 overflow-hidden card">
                 {loading && <p className="p-6 text-sm text-muted">Loading announcements...</p>}
                 {error && <p className="p-6 text-sm text-danger">{error}</p>}
 

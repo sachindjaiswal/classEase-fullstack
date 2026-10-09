@@ -9,6 +9,12 @@ import PassDonut from '@/components/dashboard/PassDonut';
 import { CHART_COLORS } from '@/components/charts/palette';
 import type { AttendanceRecord, AttendanceSummary } from '@/types';
 
+function formatDate(value: string): string {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 export default function StudentAttendanceAnalytics() {
     const { student, loading: studentLoading, error: studentError } = useStudentData();
     const [summary, setSummary] = useState<AttendanceSummary | null>(null);
@@ -117,7 +123,7 @@ export default function StudentAttendanceAnalytics() {
                             keyFor={(r) => r.id}
                             empty="No attendance recorded yet."
                             columns={[
-                                { header: 'Date', render: (r) => <span className="font-medium text-ink2">{r.date}</span> },
+                                { header: 'Date', render: (r) => <span className="font-medium text-ink2">{formatDate(r.date)}</span> },
                                 {
                                     header: 'Status',
                                     render: (r) => {

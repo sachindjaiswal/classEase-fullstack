@@ -72,8 +72,8 @@ export default function AddStudent() {
                     <select
                         value={form.classId || ''}
                         onChange={(e) => update('classId', Number(e.target.value))}
-                        className={`rounded-md border px-3 py-2 text-sm outline-none focus:border-ink ${
-                            fieldError('classId') ? 'border-danger' : 'border-border'
+                        className={`input ${
+                            fieldError('classId') ? 'input-error' : ''
                         }`}
                     >
                         <option value="" disabled>
@@ -188,8 +188,8 @@ function Field({
                 type={type}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className={`rounded-md border px-3 py-2 text-sm outline-none focus:border-ink ${
-                    error ? 'border-danger' : 'border-border'
+                className={`input ${
+                    error ? 'input-error' : ''
                 }`}
             />
             {error && <span className="text-xs text-danger">{error}</span>}

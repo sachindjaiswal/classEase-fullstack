@@ -14,13 +14,13 @@ export default function ChartCard({
     className?: string;
 }) {
     return (
-        <div className={`rounded-xl border border-border bg-surface p-5 shadow-sm ${className}`}>
+        <div className={`card p-5 ${className}`}>
             <div className="mb-4 flex items-start justify-between gap-3">
-                <div>
-                    <h3 className="font-display text-sm font-semibold text-ink2">{title}</h3>
+                <div className="min-w-0">
+                    <h3 className="font-display text-base font-semibold text-ink2">{title}</h3>
                     {subtitle && <p className="mt-0.5 text-xs text-muted">{subtitle}</p>}
                 </div>
-                    {right}
+                {right}
             </div>
             {children}
         </div>

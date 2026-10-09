@@ -1,6 +1,10 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { getTenantOptions } from '@/api/tenants';
+import type { TenantOption } from '@/types';
+import AuthLayout from '@/layouts/AuthLayout';
+import Button from '@/components/Button';
 
 export default function Register() {
     const { user, register, loading } = useAuth();
@@ -14,17 +18,28 @@ export default function Register() {
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [tenantSlug, setTenantSlug] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [institutions, setInstitutions] = useState<TenantOption[]>([]);
+    const [optionsError, setOptionsError] = useState<string | null>(null);
     const [errors, setErrors] = useState<{
         name?: string;
         email?: string;
+        tenant_slug?: string;
         password?: string;
         password_confirmation?: string;
         general?: string;
     }>({});
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        getTenantOptions()
+            .then((res) => setInstitutions(res.data.tenants))
+            .catch(() => setOptionsError("Couldn't load institutions."))
+            .finally(() => {});
+    }, []);
 
     const validate = () => {
         const next: typeof errors = {};
@@ -35,6 +50,9 @@ export default function Register() {
             next.email = 'Email is required';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             next.email = 'Enter a valid email address';
+        }
+        if (!tenantSlug) {
+            next.tenant_slug = 'Select your school';
         }
         if (!password) {
             next.password = 'Password is required';
@@ -57,13 +75,14 @@ export default function Register() {
         setSubmitting(true);
         setErrors({});
         try {
-            await register(name, email, password, passwordConfirmation);
+            await register(name, email, password, passwordConfirmation, tenantSlug.trim());
         } catch (err: any) {
             const serverErrors = err?.response?.data?.errors;
             if (serverErrors) {
                 setErrors({
                     name: serverErrors.name?.[0],
                     email: serverErrors.email?.[0],
+                    tenant_slug: serverErrors.tenant_slug?.[0],
                     password: serverErrors.password?.[0],
                     password_confirmation: serverErrors.password_confirmation?.[0],
                 });
@@ -87,119 +106,126 @@ export default function Register() {
     }
 
     return (
-        <div className="flex min-h-screen w-full items-center justify-center bg-ink px-4">
-            <div className="w-full max-w-sm rounded-xl bg-surface p-6 shadow-xl sm:p-8">
-                <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink font-display text-sm font-semibold text-gold">
-                        CE
-                    </div>
-                    <h1 className="font-display text-xl font-semibold text-ink2">ClassEase</h1>
+        <AuthLayout
+            eyebrow="Student sign-up"
+            subtitle="Create your student account to get started."
+            footer={
+                <>
+                    Already have an account?{' '}
+                    <Link
+                        to="/login"
+                        className="font-medium text-gold-dark hover:text-ink2 hover:underline"
+                    >
+                        Sign in
+                    </Link>
+                </>
+            }
+        >
+            {errors.general && (
+                <div className="mb-4 rounded-xl border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">
+                    {errors.general}
                 </div>
-                <p className="mt-3 text-sm text-muted">
-                    Create your student account to get started.</p>
+            )}
 
-                {errors.general && (
-                    <div className="mt-4 rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
-                        {errors.general}
-                    </div>
-                )}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+                <label className="flex flex-col text-sm">
+                    <span className="label">Full name</span>
+                    <input
+                        type="text"
+                        autoComplete="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="John Doe"
+                        className={`input ${errors.name ? 'input-error' : ''}`}
+                    />
+                    {errors.name && (
+                        <span className="mt-1 text-xs text-danger">{errors.name}</span>
+                    )}
+                </label>
 
-                <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4" noValidate>
-                    <label className="flex flex-col gap-1.5 text-sm">
-                        <span className="font-medium text-ink2">Full Name</span>
-                        <input
-                            type="text"
-                            autoComplete="name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="John Doe"
-                            className={`rounded-md border px-3 py-2 text-sm outline-none focus:border-ink ${
-                                errors.name ? 'border-danger' : 'border-border'
-                            }`}
-                        />
-                        {errors.name && (
-                            <span className="text-xs text-danger">{errors.name}</span>
-                        )}
-                    </label>
+                <label className="flex flex-col text-sm">
+                    <span className="label">Email</span>
+                    <input
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@classease.edu"
+                        className={`input ${errors.email ? 'input-error' : ''}`}
+                    />
+                    {errors.email && (
+                        <span className="mt-1 text-xs text-danger">{errors.email}</span>
+                    )}
+                </label>
 
-                    <label className="flex flex-col gap-1.5 text-sm">
-                        <span className="font-medium text-ink2">Email</span>
-                        <input
-                            type="email"
-                            autoComplete="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="you@classease.edu"
-                            className={`rounded-md border px-3 py-2 text-sm outline-none focus:border-ink ${
-                                errors.email ? 'border-danger' : 'border-border'
-                            }`}
-                        />
-                        {errors.email && (
-                            <span className="text-xs text-danger">{errors.email}</span>
-                        )}
-                    </label>
+                <label className="flex flex-col text-sm">
+                    <span className="label">Institution</span>
+                    {optionsError ? (
+                        <span className="text-xs text-danger">{optionsError}</span>
+                    ) : (
+                        <select
+                            value={tenantSlug}
+                            onChange={(e) => setTenantSlug(e.target.value)}
+                            className={`input ${errors.tenant_slug ? 'input-error' : ''}`}
+                        >
+                            <option value="">Select your school…</option>
+                            {institutions.map((inst) => (
+                                <option key={inst.id} value={inst.slug}>
+                                    {inst.name}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                    {errors.tenant_slug && (
+                        <span className="mt-1 text-xs text-danger">{errors.tenant_slug}</span>
+                    )}
+                </label>
 
-                    <label className="flex flex-col gap-1.5 text-sm">
-                        <span className="font-medium text-ink2">Password</span>
-                        <div className="relative">
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                autoComplete="new-password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className={`w-full rounded-md border px-3 py-2 pr-16 text-sm outline-none focus:border-ink ${
-                                    errors.password ? 'border-danger' : 'border-border'
-                                }`}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword((s) => !s)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted hover:text-ink2"
-                            >
-                                {showPassword ? 'Hide' : 'Show'}
-                            </button>
-                        </div>
-                        {errors.password && (
-                            <span className="text-xs text-danger">{errors.password}</span>
-                        )}
-                    </label>
-
-                    <label className="flex flex-col gap-1.5 text-sm">
-                        <span className="font-medium text-ink2">Confirm Password</span>
+                <label className="flex flex-col text-sm">
+                    <span className="label">Password</span>
+                    <div className="relative">
                         <input
                             type={showPassword ? 'text' : 'password'}
                             autoComplete="new-password"
-                            value={passwordConfirmation}
-                            onChange={(e) => setPasswordConfirmation(e.target.value)}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
-                            className={`rounded-md border px-3 py-2 text-sm outline-none focus:border-ink ${
-                                errors.password_confirmation ? 'border-danger' : 'border-border'
-                            }`}
+                            className={`input pr-16 ${errors.password ? 'input-error' : ''}`}
                         />
-                        {errors.password_confirmation && (
-                            <span className="text-xs text-danger">
-                                {errors.password_confirmation}
-                            </span>
-                        )}
-                    </label>
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((s) => !s)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3.5 text-xs font-semibold text-gold-dark transition hover:text-ink2"
+                        >
+                            {showPassword ? 'Hide' : 'Show'}
+                        </button>
+                    </div>
+                    {errors.password && (
+                        <span className="mt-1 text-xs text-danger">{errors.password}</span>
+                    )}
+                </label>
 
-                    <button
-                        type="submit"
-                        disabled={submitting}
-                        className="mt-2 rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        {submitting ? 'Creating account…' : 'Create Account'}
-                    </button>
-                </form>
+                <label className="flex flex-col text-sm">
+                    <span className="label">Confirm password</span>
+                    <input
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        value={passwordConfirmation}
+                        onChange={(e) => setPasswordConfirmation(e.target.value)}
+                        placeholder="••••••••"
+                        className={`input ${errors.password_confirmation ? 'input-error' : ''}`}
+                    />
+                    {errors.password_confirmation && (
+                        <span className="mt-1 text-xs text-danger">
+                            {errors.password_confirmation}
+                        </span>
+                    )}
+                </label>
 
-                <p className="mt-6 text-center text-sm text-muted">
-                    Already have an account?{' '}
-                    <Link to="/login" className="font-medium text-ink2 hover:underline">
-                        Sign in
-                    </Link>
-                </p>
-            </div>
-        </div>
+                <Button type="submit" size="lg" disabled={submitting} className="mt-1 w-full">
+                    {submitting ? 'Creating account…' : 'Create account'}
+                </Button>
+            </form>
+        </AuthLayout>
     );
 }

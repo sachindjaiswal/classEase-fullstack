@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
+use App\Rules\TenantExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ class StudentController extends Controller
     public function addStudent(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'classId' => 'required|exists:classes,id',
+            'classId' => ['required', TenantExists::make('classes')],
             'firstName' => 'required|string|max:255',
             'middleName' => 'nullable|string|max:255',
             'surname' => 'required|string|max:255',
@@ -136,7 +137,7 @@ class StudentController extends Controller
         }
 
         $validated = $request->validate([
-            'classId' => 'sometimes|required|exists:classes,id',
+            'classId' => ['sometimes', 'required', TenantExists::make('classes')],
             'firstName' => 'sometimes|string|max:255',
             'middleName' => 'nullable|string|max:255',
             'surname' => 'sometimes|string|max:255',

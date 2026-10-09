@@ -6,7 +6,13 @@ interface AuthContextValue {
     user: User | null;
     loading: boolean;
     login: (email: string, password: string) => Promise<void>;
-    register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>;
+    register: (
+        name: string,
+        email: string,
+        password: string,
+        password_confirmation: string,
+        tenant_slug: string,
+    ) => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -14,6 +20,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function mapRole(backendRole: string): Role | null {
     if (backendRole === 'admin') return 'management';
+    if (backendRole === 'platform_admin') return 'platform';
     if (
         backendRole === 'management' ||
         backendRole === 'teacher' ||
@@ -58,8 +65,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({ id: bUser.id, name: bUser.name, email: bUser.email, role });
     };
 
-    const register = async (name: string, email: string, password: string, password_confirmation: string) => {
-        const res = await api.post('/register', { name, email, password, password_confirmation });
+    const register = async (
+        name: string,
+        email: string,
+        password: string,
+        password_confirmation: string,
+        tenant_slug: string,
+    ) => {
+        const res = await api.post('/register', {
+            name,
+            email,
+            password,
+            password_confirmation,
+            tenant_slug,
+        });
         const { user: bUser, token } = res.data;
         localStorage.setItem('authToken', token);
         const mappedRole = mapRole(bUser.role);

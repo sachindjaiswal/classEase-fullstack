@@ -86,7 +86,7 @@ export default function StudentsByClass() {
                             onChange={(e) =>
                                 setSelectedClassId(Number(e.target.value))
                             }
-                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                            className="input"
                         >
                             {classes.map((c) => (
                                 <option key={c.id} value={c.id}>
@@ -96,7 +96,7 @@ export default function StudentsByClass() {
                         </select>
                     </label>
 
-                    <div className="mt-4 overflow-hidden rounded-lg border border-border bg-surface">
+                    <div className="mt-4 overflow-hidden card">
                         {loadingStudents && (
                             <p className="p-6 text-sm text-muted">
                                 Loading students…

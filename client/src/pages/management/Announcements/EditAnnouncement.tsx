@@ -77,7 +77,7 @@ export default function EditAnnouncement() {
                     <select
                         value={form.class_id}
                         onChange={(e) => update('class_id', e.target.value)}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     >
                         <option value="">All classes (general announcement)</option>
                         {classes.map((c) => (
@@ -97,7 +97,7 @@ export default function EditAnnouncement() {
                         type="text"
                         value={form.title}
                         onChange={(e) => update('title', e.target.value)}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     />
                     {fieldError('title') && (
                         <span className="text-xs text-danger">{fieldError('title')}</span>
@@ -110,7 +110,7 @@ export default function EditAnnouncement() {
                         value={form.description}
                         onChange={(e) => update('description', e.target.value)}
                         rows={4}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink resize-none"
+                        className="input resize-none"
                     />
                 </label>
 

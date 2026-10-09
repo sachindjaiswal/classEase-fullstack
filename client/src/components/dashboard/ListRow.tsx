@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { BENTO_RADIUS } from '@/components/charts/palette';
 
 export default function ListRow({
     icon,
@@ -19,10 +18,7 @@ export default function ListRow({
     trailing?: ReactNode;
 }) {
     return (
-        <div
-            className="flex items-center gap-4 border border-border bg-surface px-5 py-4 transition hover:shadow-sm"
-            style={{ borderRadius: BENTO_RADIUS }}
-        >
+        <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-5 py-4 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
             <span
                 className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}
             >

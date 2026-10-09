@@ -1,5 +1,6 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AXIS_TICK, CHART_COLORS, fmt, TOOLTIP_STYLE } from '@/components/charts/palette';
+import { AXIS_TICK, CHART_COLORS, CURSOR_BAR, GRID_STROKE } from '@/components/charts/palette';
+import ChartTooltip from '@/components/charts/ChartTooltip';
 
 export interface SeriesDef {
     key: string;
@@ -19,30 +20,61 @@ export default function GroupedBars({
     unit?: string;
     categoryWidth?: number;
 }) {
+    if (data.length === 0) {
+        return (
+            <div
+                className="flex items-center justify-center text-sm text-muted"
+                style={{ height }}
+            >
+                No data yet.
+            </div>
+        );
+    }
+
     return (
         <div className="min-w-0" style={{ height }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.border} />
+            <ResponsiveContainer width="100%" height="100%" minHeight={height}>
+                <BarChart
+                    data={data}
+                    margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                    barGap={4}
+                    barCategoryGap="24%"
+                >
+                    <CartesianGrid strokeDasharray="4 4" stroke={GRID_STROKE} vertical={false} />
                     <XAxis
                         dataKey="label"
                         tick={{ ...AXIS_TICK, fill: CHART_COLORS.ink2 }}
-                        tickFormatter={(v: string) => (v.length > 10 ? `${v.slice(0, 9)}…` : v)}
+                        tickFormatter={(v: string) => (v.length > 14 ? `${v.slice(0, 13)}…` : v)}
                         axisLine={false}
                         tickLine={false}
+                        tickMargin={8}
                         interval="preserveStartEnd"
                         minTickGap={8}
                     />
-                    <YAxis domain={[0, 100]} tick={AXIS_TICK} axisLine={false} tickLine={false} width={36} />
-                    <Tooltip
-                        cursor={{ fill: 'rgba(30,42,74,0.04)' }}
-                        contentStyle={TOOLTIP_STYLE}
-                        labelStyle={{ color: CHART_COLORS.ink2, fontWeight: 600 }}
-                        formatter={(value) => fmt(Number(value), unit)}
+                    <YAxis
+                        domain={[0, 100]}
+                        tick={AXIS_TICK}
+                        axisLine={false}
+                        tickLine={false}
+                        width={36}
+                        tickMargin={6}
+                        allowDecimals={false}
                     />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Tooltip content={<ChartTooltip unit={unit} />} cursor={CURSOR_BAR} />
+                    <Legend
+                        wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                        iconType="circle"
+                        iconSize={8}
+                    />
                     {series.map((s) => (
-                        <Bar key={s.key} dataKey={s.key} name={s.key} fill={s.color} radius={[4, 4, 0, 0]} barSize={12} />
+                        <Bar
+                            key={s.key}
+                            dataKey={s.key}
+                            name={s.key}
+                            fill={s.color}
+                            radius={[4, 4, 0, 0]}
+                            maxBarSize={18}
+                        />
                     ))}
                 </BarChart>
             </ResponsiveContainer>

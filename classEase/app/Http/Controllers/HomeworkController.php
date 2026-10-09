@@ -6,6 +6,7 @@ use App\Models\Homework;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Teacher;
+use App\Rules\TenantExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -25,8 +26,8 @@ class HomeworkController extends Controller
     public function createHomework(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'class_id' => 'required|exists:classes,id',
-            'subject_id' => 'required|exists:subjects,id',
+            'class_id' => ['required', TenantExists::make('classes')],
+            'subject_id' => ['required', TenantExists::make('subjects')],
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'assigned_date' => 'required|date',
@@ -92,8 +93,8 @@ class HomeworkController extends Controller
         }
 
         $validated = $request->validate([
-            'class_id' => 'sometimes|exists:classes,id',
-            'subject_id' => 'sometimes|exists:subjects,id',
+            'class_id' => ['sometimes', TenantExists::make('classes')],
+            'subject_id' => ['sometimes', TenantExists::make('subjects')],
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'assigned_date' => 'sometimes|date',

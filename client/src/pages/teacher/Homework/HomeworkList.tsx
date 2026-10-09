@@ -83,7 +83,7 @@ export default function TeacherHomeworkList() {
                 <select
                     value={selectedClassId ?? ''}
                     onChange={(e) => setSelectedClassId(Number(e.target.value))}
-                    className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                    className="input"
                     disabled={classes.length === 0}
                 >
                     {classes.length === 0 && <option value="">No classes assigned</option>}
@@ -96,7 +96,7 @@ export default function TeacherHomeworkList() {
                 </select>
             </label>
 
-            <div className="mt-4 overflow-hidden rounded-lg border border-border bg-surface">
+            <div className="mt-4 overflow-hidden card">
                 {loading && <p className="p-6 text-sm text-muted">Loading homework...</p>}
                 {error && <p className="p-6 text-sm text-danger">{error}</p>}
 

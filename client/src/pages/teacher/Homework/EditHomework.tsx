@@ -99,7 +99,7 @@ export default function TeacherEditHomework() {
                     <select
                         value={form.subject_id}
                         onChange={(e) => update('subject_id', e.target.value)}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     >
                         <option value="">Select your subject</option>
                         {subjects.map((s) => (
@@ -126,7 +126,7 @@ export default function TeacherEditHomework() {
                         type="text"
                         value={form.title}
                         onChange={(e) => update('title', e.target.value)}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                        className="input"
                     />
                     {fieldError('title') && (
                         <span className="text-xs text-danger">{fieldError('title')}</span>
@@ -139,7 +139,7 @@ export default function TeacherEditHomework() {
                         value={form.description}
                         onChange={(e) => update('description', e.target.value)}
                         rows={3}
-                        className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink resize-none"
+                        className="input resize-none"
                     />
                 </label>
 
@@ -150,7 +150,7 @@ export default function TeacherEditHomework() {
                             type="date"
                             value={form.assigned_date}
                             onChange={(e) => update('assigned_date', e.target.value)}
-                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                            className="input"
                         />
                     </label>
 
@@ -160,7 +160,7 @@ export default function TeacherEditHomework() {
                             type="date"
                             value={form.due_date}
                             onChange={(e) => update('due_date', e.target.value)}
-                            className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                            className="input"
                         />
                         {fieldError('due_date') && (
                             <span className="text-xs text-danger">{fieldError('due_date')}</span>

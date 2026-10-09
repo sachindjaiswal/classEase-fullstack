@@ -76,7 +76,7 @@ export default function TeacherStudentsAnalytics() {
         <select
             value={selectedSubject ?? subjects[0]?.id ?? ''}
             onChange={(e) => setSelectedSubject(Number(e.target.value))}
-            className="max-w-[180px] rounded-lg border border-border bg-surface px-2 py-1 text-xs text-ink2 outline-none"
+            className="max-w-[180px] input px-2 py-1 text-xs text-ink2"
         >
             {subjects.map((s) => (
                 <option key={s.id} value={s.id}>

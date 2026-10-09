@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Announcement;
 use App\Models\Student;
+use App\Rules\TenantExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,7 +13,7 @@ class AnnouncementController extends Controller
     public function createAnnouncement(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'class_id' => 'nullable|exists:classes,id',
+            'class_id' => ['nullable', TenantExists::make('classes')],
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
@@ -79,7 +80,7 @@ class AnnouncementController extends Controller
         }
 
         $validated = $request->validate([
-            'class_id' => 'nullable|exists:classes,id',
+            'class_id' => ['nullable', TenantExists::make('classes')],
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
         ]);

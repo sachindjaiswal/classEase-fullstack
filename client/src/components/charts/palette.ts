@@ -44,13 +44,13 @@ export const SERIES = {
     pink: '#FF3E6C',
 };
 
-// Professional chart sequence (blue/green/gold/red) that matches the project theme.
+// Professional chart sequence (gold/ink/teal) that matches the project theme.
 export const ACCENT_SEQUENCE = [
+    CHART_COLORS.gold,
+    CHART_COLORS.ink,
+    CHART_COLORS.teal,
     CHART_COLORS.blue,
     CHART_COLORS.success,
-    CHART_COLORS.gold,
-    CHART_COLORS.danger,
-    CHART_COLORS.ink,
     CHART_COLORS.warning,
 ];
 
@@ -71,7 +71,24 @@ export const TOOLTIP_STYLE = {
     boxShadow: '0 8px 24px rgba(30,42,74,0.12)',
 };
 
-export const AXIS_TICK = { fill: '#646F82', fontSize: 11, fontFamily: '"IBM Plex Sans", sans-serif' };
+export const AXIS_TICK = {
+    fill: '#7A8497',
+    fontSize: 11,
+    fontWeight: 500,
+    fontFamily: '"IBM Plex Sans", sans-serif',
+};
+
+export const GRID_STROKE = '#ECEFF5';
+
+export const CURSOR_LINE = {
+    stroke: 'rgba(30,42,74,0.18)',
+    strokeWidth: 1,
+    strokeDasharray: '4 4',
+};
+
+export const CURSOR_BAR = { fill: 'rgba(30,42,74,0.05)' };
+
+export const BAR_TRACK = '#F1F3F8';
 
 export function fmt(value: unknown, unit = ''): [string, string] {
     const n = typeof value === 'number' ? Math.round(value) : 0;

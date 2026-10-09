@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { BENTO_RADIUS } from '@/components/charts/palette';
 
 export default function MetricRow({
     icon,
@@ -17,10 +16,7 @@ export default function MetricRow({
     iconColor?: string;
 }) {
     return (
-        <div
-            className="flex items-center gap-4 border border-border bg-surface p-5 shadow-sm"
-            style={{ borderRadius: BENTO_RADIUS }}
-        >
+        <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
             <span
                 className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}
             >

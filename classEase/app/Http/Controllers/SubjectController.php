@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Subject;
+use App\Rules\TenantExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -61,9 +62,9 @@ class SubjectController extends Controller
     public function createSubject(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'classId' => ['required', 'exists:classes,id'],
+            'classId' => ['required', TenantExists::make('classes')],
             'subjectName' => ['required', 'string', 'max:255'],
-            'teacherId' => ['required', 'exists:teachers,id'],
+            'teacherId' => ['required', TenantExists::make('teachers')],
         ]);
 
         $subject = Subject::create($validated);
@@ -91,9 +92,9 @@ class SubjectController extends Controller
         }
 
         $validated = $request->validate([
-            'classId' => ['sometimes', 'exists:classes,id'],
+            'classId' => ['sometimes', TenantExists::make('classes')],
             'subjectName' => ['sometimes', 'string', 'max:255'],
-            'teacherId' => ['sometimes', 'exists:teachers,id'],
+            'teacherId' => ['sometimes', TenantExists::make('teachers')],
         ]);
 
         $subject->update($validated);

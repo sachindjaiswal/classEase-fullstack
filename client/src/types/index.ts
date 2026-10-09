@@ -1,10 +1,53 @@
-export type Role = 'management' | 'teacher' | 'student';
+export type Role = 'management' | 'teacher' | 'student' | 'platform';
 
 export interface User {
   id: number;
   name: string;
   email: string;
   role: Role;
+}
+
+// ── Platform (institution management) ───────────────────────────
+// Matches GET /platform/tenants — each tenant's first admin is also
+// listed under `admins` (id/name/email only, from the eager load).
+export interface PlatformAdmin {
+  id: number;
+  name: string;
+  email: string;
+  tenant_id: number | null;
+}
+
+export interface Tenant {
+  id: number;
+  name: string;
+  slug: string;
+  users_count?: number;
+  admins_count?: number;
+  admins?: PlatformAdmin[];
+}
+
+export interface TenantInput {
+  name: string;
+  slug: string;
+}
+
+export interface TenantCreateInput extends TenantInput {
+  admin_name: string;
+  admin_email: string;
+  admin_password: string;
+}
+
+export interface TenantAdminInput {
+  name: string;
+  email: string;
+  password: string;
+}
+
+// Public sign-up list (GET /tenants) — used by the Register page dropdown.
+export interface TenantOption {
+  id: number;
+  name: string;
+  slug: string;
 }
 
 // ── Teacher ─────────────────────────────────────────────────────
@@ -114,6 +157,8 @@ export interface TeacherSummary {
 export interface ClassSummary {
   id: number;
   class_name: string;
+  section?: string;
+  room_no?: string;
 }
 
 export interface SubjectFull extends Subject {

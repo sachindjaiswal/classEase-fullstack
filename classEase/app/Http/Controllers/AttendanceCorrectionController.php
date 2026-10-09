@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\AttendanceCorrection;
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Rules\TenantExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,7 +23,7 @@ class AttendanceCorrectionController extends Controller
         }
 
         $validated = $request->validate([
-            'attendance_id' => 'required|exists:attendances,id',
+            'attendance_id' => ['required', TenantExists::make('attendances')],
             'requested_status' => 'required|in:'.implode(',', self::STATUSES),
             'message' => 'required|string|min:3|max:500',
         ]);
@@ -113,8 +114,8 @@ class AttendanceCorrectionController extends Controller
         }
 
         $corrections = $query->orderByRaw(
-    "CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, created_at desc"
-)->get();
+            "CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, created_at desc"
+        )->get();
 
         return response()->json([
             'message' => 'Attendance appeals retrieved successfully',

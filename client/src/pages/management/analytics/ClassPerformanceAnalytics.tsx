@@ -115,7 +115,7 @@ export default function ClassPerformanceAnalytics() {
         <select
             value={selectedClassId ?? ''}
             onChange={(e) => setSelectedClassId(Number(e.target.value))}
-            className="max-w-[200px] rounded-lg border border-border bg-surface px-2 py-1 text-xs text-ink2 outline-none"
+            className="max-w-[200px] input px-2 py-1 text-xs text-ink2"
         >
             {classes.map((c) => (
                 <option key={c.id} value={c.id}>

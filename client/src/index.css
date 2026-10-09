@@ -10,6 +10,10 @@ body,
 
 body {
   @apply bg-base text-ink2 font-body antialiased;
+  background-image:
+    radial-gradient(70rem 44rem at 100% -12%, rgba(200, 155, 60, 0.06), transparent 60%),
+    radial-gradient(64rem 40rem at -10% 0%, rgba(30, 42, 74, 0.05), transparent 55%);
+  background-attachment: fixed;
 }
 
 h1,
@@ -30,9 +34,74 @@ h4 {
   outline-offset: 2px;
 }
 
+::selection {
+  background: rgba(200, 155, 60, 0.28);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* refined scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c9cede transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #cdd2dd;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #b3bac8;
+  background-clip: content-box;
+}
+
+@layer base {
+  /* Every data table gets a refined header + row rhythm by default.
+     Page-level Tailwind utilities still win where they are set. */
+  table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+  thead th {
+    @apply whitespace-nowrap border-b border-border bg-base/70 px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+  tbody td {
+    @apply px-5 py-3.5 align-middle;
+  }
+  tbody tr {
+    @apply transition-colors;
+  }
+  tbody tr:hover {
+    @apply bg-ink-50/70;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-border bg-surface shadow-card;
+  }
+  .card-hover {
+    @apply transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover;
+  }
+  .input {
+    @apply w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-ink2 shadow-sm outline-none transition placeholder:text-muted/50 focus:border-ink/30 focus:ring-4 focus:ring-gold/15;
+  }
+  .input-error {
+    @apply border-danger focus:border-danger focus:ring-danger/15;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink2;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
   }
 }

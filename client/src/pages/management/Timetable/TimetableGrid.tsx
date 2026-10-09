@@ -185,7 +185,7 @@ export default function TimetableGrid() {
                 <select
                     value={classId}
                     onChange={(e) => setClassId(e.target.value)}
-                    className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-ink"
+                    className="input"
                 >
                     <option value="">Select a class</option>
                     {classes.map((c) => (
@@ -211,7 +211,7 @@ export default function TimetableGrid() {
 
             {!loading && classId && (
                 <div className="mt-5">
-                    <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+                    <div className="overflow-x-auto card">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-base text-xs uppercase tracking-wide text-muted">
                                 <tr>
@@ -244,7 +244,7 @@ export default function TimetableGrid() {
                                                                 : Number(e.target.value),
                                                         )
                                                     }
-                                                    className="w-40 rounded-md border border-border px-2 py-1.5 text-sm outline-none focus:border-ink"
+                                                    className="w-40 input"
                                                 >
                                                     <option value="">—</option>
                                                     {classSubjects.map((s) => (
@@ -277,7 +277,7 @@ export default function TimetableGrid() {
             )}
 
             {!loading && !classId && (
-                <div className="mt-6 rounded-lg border border-border bg-surface p-10 text-center">
+                <div className="mt-6 card p-10 text-center">
                     <p className="text-sm font-medium text-ink2">Select a class to view its timetable</p>
                     <p className="mt-1 text-sm text-muted">
                         Then set the subject for each period and day.
