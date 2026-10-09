@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import NoticesTasks from '@/components/NoticesTasks';
 import { getDashboardStats, getDashboardFeed } from '@/api/dashboard';
@@ -104,6 +104,15 @@ export default function ManagementDashboard() {
         return () => {
             cancelled = true;
         };
+    }, []);
+
+    const refreshFeed = useCallback(() => {
+        getDashboardFeed()
+            .then((res) => {
+                setAnnouncements(res.data.announcements);
+                setHomeworks(res.data.homeworks);
+            })
+            .catch(() => {});
     }, []);
 
     const allScores: DatedScore[] = useMemo(
@@ -502,7 +511,11 @@ export default function ManagementDashboard() {
                         </Card>
                     </div>
 
-                    <NoticesTasks announcements={announcements} homeworks={homeworks} />
+                    <NoticesTasks
+                        announcements={announcements}
+                        homeworks={homeworks}
+                        onChanged={refreshFeed}
+                    />
                 </>
             )}
         </div>

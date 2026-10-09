@@ -301,8 +301,22 @@ test('platform admin can delete an institution admin and revoke their sessions',
 
     $this->deleteJson("/api/platform/users/{$target->id}")->assertOk();
 
-    expect($target->fresh()->trashed())->toBeTrue()
+    expect(User::withTrashed()->find($target->id))->toBeNull()
         ->and($target->tokens()->count())->toBe(0);
+});
+
+test('platform admin deleting a teacher purges the profile so the email can be reused', function () {
+    $platform = tenancyNullTenantUser('platform_admin');
+    $tenant = Tenant::query()->where('slug', 'test-school')->firstOrFail();
+    $teacher = tenancyTeacherFor($tenant);
+    $teacherUser = $teacher->user;
+
+    Sanctum::actingAs($platform);
+
+    $this->deleteJson("/api/platform/users/{$teacherUser->id}")->assertOk();
+
+    expect(Teacher::withTrashed()->find($teacher->id))->toBeNull()
+        ->and(User::withTrashed()->find($teacherUser->id))->toBeNull();
 });
 
 test('platform admin cannot delete their own account or another platform admin', function () {

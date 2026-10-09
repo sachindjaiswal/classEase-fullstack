@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/context/AuthContext';
@@ -27,22 +27,35 @@ export default function DashboardLayout() {
         setSidebarOpen(false);
     }, [location.pathname]);
 
-    const crumbs = location.pathname
-        .split('/')
-        .filter(Boolean)
-        .slice(1)
-        .map(prettify);
+    const openSidebar = useCallback(() => setSidebarOpen(true), []);
+    const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+
+    const crumbs = useMemo(
+        () => location.pathname.split('/').filter(Boolean).slice(1).map(prettify),
+        [location.pathname],
+    );
+
+    const today = useMemo(
+        () =>
+            new Date().toLocaleDateString(undefined, {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+            }),
+        [],
+    );
 
     return (
         <div className="flex h-screen w-full overflow-hidden">
-            <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            <Sidebar open={sidebarOpen} onClose={closeSidebar} />
 
             <main className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-transparent">
                 {/* Top bar */}
                 <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border/70 bg-surface/85 px-4 py-3 backdrop-blur-md md:px-8">
                     <div className="flex min-w-0 items-center gap-3">
                         <button
-                            onClick={() => setSidebarOpen(true)}
+                            onClick={openSidebar}
                             className="rounded-lg p-1.5 text-ink2 transition hover:bg-base md:hidden"
                             aria-label="Open sidebar"
                         >
@@ -81,12 +94,7 @@ export default function DashboardLayout() {
 
                     <div className="flex shrink-0 items-center gap-3">
                         <span className="hidden text-xs text-muted lg:block">
-                            {new Date().toLocaleDateString(undefined, {
-                                weekday: 'short',
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                            })}
+                            {today}
                         </span>
                         {user && (
                             <div className="flex items-center gap-2.5 rounded-full border border-border bg-white py-1 pl-1 pr-3 shadow-sm">

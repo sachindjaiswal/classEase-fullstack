@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { CHART_COLORS } from '@/components/charts/palette';
 import ChartTooltip from '@/components/charts/ChartTooltip';
@@ -7,7 +8,7 @@ export interface DonutSlice {
     value: number;
 }
 
-export default function PassDonut({
+function PassDonut({
     data,
     centerLabel,
     centerSub = 'Overall',
@@ -65,3 +66,5 @@ export default function PassDonut({
         </div>
     );
 }
+
+export default memo(PassDonut);

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
     AXIS_TICK,
@@ -13,7 +14,7 @@ export interface CategoryRow {
     value: number;
 }
 
-export default function CategoryBars({
+function CategoryBars({
     data,
     height = 220,
     unit = '',
@@ -85,3 +86,5 @@ export default function CategoryBars({
         </div>
     );
 }
+
+export default memo(CategoryBars);

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import {
     Area,
     AreaChart,
@@ -21,7 +22,7 @@ export interface TrendPoint {
     [key: string]: string | number;
 }
 
-export default function TrendChart({
+function TrendChart({
     data,
     dataKey = 'value',
     height = 230,
@@ -100,3 +101,5 @@ export default function TrendChart({
         </ResponsiveContainer>
     );
 }
+
+export default memo(TrendChart);

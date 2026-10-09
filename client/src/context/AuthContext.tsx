@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+    type ReactNode,
+} from 'react';
 import type { Role, User } from '@/types';
 import api from '@/api/axios';
 
@@ -56,37 +64,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .finally(() => setLoading(false));
     }, []);
 
-    const login = async (email: string, password: string) => {
+    const login = useCallback(async (email: string, password: string) => {
         const res = await api.post('/login', { email, password });
         const { user: bUser, token } = res.data;
         localStorage.setItem('authToken', token);
         const role = mapRole(bUser.role);
         if (!role) throw new Error('Unknown user role');
         setUser({ id: bUser.id, name: bUser.name, email: bUser.email, role });
-    };
+    }, []);
 
-    const register = async (
-        name: string,
-        email: string,
-        password: string,
-        password_confirmation: string,
-        tenant_slug: string,
-    ) => {
-        const res = await api.post('/register', {
-            name,
-            email,
-            password,
-            password_confirmation,
-            tenant_slug,
-        });
-        const { user: bUser, token } = res.data;
-        localStorage.setItem('authToken', token);
-        const mappedRole = mapRole(bUser.role);
-        if (!mappedRole) throw new Error('Unknown user role');
-        setUser({ id: bUser.id, name: bUser.name, email: bUser.email, role: mappedRole });
-    };
+    const register = useCallback(
+        async (
+            name: string,
+            email: string,
+            password: string,
+            password_confirmation: string,
+            tenant_slug: string,
+        ) => {
+            const res = await api.post('/register', {
+                name,
+                email,
+                password,
+                password_confirmation,
+                tenant_slug,
+            });
+            const { user: bUser, token } = res.data;
+            localStorage.setItem('authToken', token);
+            const mappedRole = mapRole(bUser.role);
+            if (!mappedRole) throw new Error('Unknown user role');
+            setUser({ id: bUser.id, name: bUser.name, email: bUser.email, role: mappedRole });
+        },
+        [],
+    );
 
-    const logout = async () => {
+    const logout = useCallback(async () => {
         try {
             await api.post('/logout');
         } catch {
@@ -94,13 +105,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         localStorage.removeItem('authToken');
         setUser(null);
-    };
+    }, []);
 
-    return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout }}>
-            {children}
-        </AuthContext.Provider>
+    const value = useMemo(
+        () => ({ user, loading, login, register, logout }),
+        [user, loading, login, register, logout],
     );
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

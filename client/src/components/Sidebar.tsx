@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
@@ -193,7 +193,7 @@ interface SidebarProps {
     onClose: () => void;
 }
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
+function Sidebar({ open, onClose }: SidebarProps) {
     const { user, logout } = useAuth();
     if (!user) return null;
     const groups = NAV[user.role] ?? [];
@@ -329,3 +329,5 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </>
     );
 }
+
+export default memo(Sidebar);

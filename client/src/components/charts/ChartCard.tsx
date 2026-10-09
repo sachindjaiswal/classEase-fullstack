@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 
-export default function ChartCard({
+function ChartCard({
     title,
     subtitle,
     right,
@@ -26,3 +26,5 @@ export default function ChartCard({
         </div>
     );
 }
+
+export default memo(ChartCard);

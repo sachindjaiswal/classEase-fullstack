@@ -152,8 +152,12 @@ class TenantController extends Controller
     }
 
     /**
-     * Delete a user account (soft delete). Platform only — guards against
+     * Delete a user account permanently. Platform only — guards against
      * deleting platform admins, yourself, or the last admin of a school.
+     *
+     * The linked Student/Teacher profile is purged too (force delete), so the
+     * email and row are fully freed for reuse instead of leaving a half-deleted
+     * user whose active profile blocked re-adding the same email.
      */
     public function destroyUser(int $id): JsonResponse
     {
@@ -185,8 +189,12 @@ class TenantController extends Controller
             }
         }
 
-        $user->tokens()->delete();
-        $user->delete();
+        DB::transaction(function () use ($user): void {
+            $user->student()->withTrashed()->forceDelete();
+            $user->teacher()->withTrashed()->forceDelete();
+            $user->tokens()->delete();
+            $user->forceDelete();
+        });
 
         return response()->json([
             'message' => 'User deleted',

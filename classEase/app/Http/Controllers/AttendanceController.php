@@ -32,19 +32,34 @@ class AttendanceController extends Controller
 
         $teacher = Teacher::where('user_id', $teacherId)->first();
 
+        $studentIds = array_map(
+            static fn (array $item): int => (int) $item['student_id'],
+            $validated['attendances'],
+        );
+
+        $existing = Attendance::whereIn('student_id', $studentIds)
+            ->where('date', $validated['date'])
+            ->get()
+            ->keyBy('student_id');
+
         foreach ($validated['attendances'] as $item) {
-            Attendance::updateOrCreate(
-                [
+            $attributes = [
+                'class_id' => $validated['class_id'],
+                'status' => $item['status'],
+                'marked_by' => $teacher?->id,
+                'remarks' => $item['remarks'] ?? null,
+            ];
+
+            $attendance = $existing->get((int) $item['student_id']);
+
+            if ($attendance instanceof Attendance) {
+                $attendance->fill($attributes)->save();
+            } else {
+                Attendance::create(array_merge($attributes, [
                     'student_id' => $item['student_id'],
                     'date' => $validated['date'],
-                ],
-                [
-                    'class_id' => $validated['class_id'],
-                    'status' => $item['status'],
-                    'marked_by' => $teacher?->id,
-                    'remarks' => $item['remarks'] ?? null,
-                ]
-            );
+                ]));
+            }
         }
 
         return response()->json([

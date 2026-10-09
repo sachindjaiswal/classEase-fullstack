@@ -20,9 +20,35 @@
 3. **✅ Re-ran the Verification Order (2026-10-09)** — Pint PASS, PHPStan `[OK] No errors`,
    tests **49 passed / 174 assertions**; live smoke confirmed all pages show data. Re-run after any
    future change and hard-refresh (Ctrl+F5) the client at `http://localhost:5175`.
-4. **Decide about committing** — STILL uncommitted (multi-tenancy + platform UI + delete-user +
-   compose port retune + UI polish + the 2026-10-09 seeder enrichment). Nothing was pushed.
-5. **Anything below this line remains the standing baseline** — see Docker table (3308/6381/8081/5175,
+4. **Dashboard "Notices & Tasks" is now editable (2026-10-09, later)** — `NoticesTasks.tsx` is
+   role-adaptive (admin/teacher inline add/edit/delete via the existing announcements + homework
+   APIs; teacher limited to own classes/subjects/assigned tasks; students read-only) and the
+   management/teacher dashboards pass an `onChanged` feed refresh. Client build + live CRUD smoke
+   PASS. See "Work Completed (2026-10-09, later)" at the end. Still uncommitted.
+5. **Deleted users/emails now reusable (2026-10-09)** — the platform `DELETE /platform/users/{id}`
+   used to only **soft-delete** the user and leave the linked Student/Teacher row active, so the
+   email still failed `students.email`/`teachers.email` uniqueness ("The email has already been
+   taken") and the row was never truly gone. `TenantController::destroyUser` now force-deletes the
+   user AND purges the linked Student/Teacher profile in one transaction (all user-ref FKs are
+   SET NULL/CASCADE, verified). Pint PASS, PHPStan 0 errors, **50 tests / 177 assertions**.
+   See "Work Completed (2026-10-09, fix)" at the end.
+6. **Performance pass (2026-10-09, later)** — attacked the three flagged slowness items:
+   (a) **N+1 backend queries** — batched `ComparisonController` (`gaps`/`progress`/`headToHead`),
+   `TimetableController::saveTimetable` and `AttendanceController::markAttendance` (see Controllers).
+   (b) **Unnecessary re-renders** — memoized `AuthContext` (was re-creating `login`/`register`/`logout`
+   and the provider `value` literal every render), wrapped `Sidebar`, the 6 dashboard chart leaves
+   (`CategoryBars`/`GroupedBars`/`PassDonut`/`Top5Bar`/`TrendChart`/`Sparkline`) and `ChartCard` in
+   `React.memo`, memoized `DashboardLayout` callbacks/crumbs/date, and wrapped `refreshFeed` in
+   `useCallback` on both staff dashboards.
+   (c) **Unused dependency** — removed `concurrently` from `classEase/package.json` (0 references).
+   Verified: Pint PASS, PHPStan `[OK] No errors`, **50 tests / 177 assertions**, client `npm run build`
+   PASS, and live :8081 smoke (comparison outputs byte-identical, attendance create+update, timetable
+   round-trip + subject auto-teacher). See "Work Completed (2026-10-09, perf)" at the end.
+7. **Decide about committing** — STILL uncommitted (multi-tenancy + platform UI + delete-user +
+   compose port retune + UI polish + the 2026-10-09 seeder enrichment + editable Notices & Tasks +
+   its 2026-10-09 visual restyle + permanent user-delete + the 2026-10-09 performance pass). Nothing
+   was pushed.
+8. **Anything below this line remains the standing baseline** — see Docker table (3308/6381/8081/5175,
    `classease-local-*`), test accounts, routes, and the "Session 2" hand-off notes.
 
 ## Project at a Glance
@@ -155,7 +181,7 @@ All of the following pass. **Run in this order.**
 | JS types | `npm run types:check` | PASS |
 | PHP lint | `& "C:\xampp\php\php.exe" vendor\bin\pint --test` | PASS |
 | PHPStan (lvl 7) | disposable container (see Docker gotchas) | PASS (0 errors) |
-| Tests | see "Running Tests" below | **49 passed (174 assertions)** (2026-10-08) |
+| Tests | see "Running Tests" below | **50 passed (177 assertions)** (2026-10-09) |
 | Full-stack smoke | `docker compose up -d --build` + migrate + seed; login/me/classes via :8081, SPA + API proxy on :5175 | **PASS live (2026-10-08)** — see "Full-stack smoke test (2026-10-08)" |
 
 ### Full-stack smoke test (2026-10-08) — OUR stack, live
@@ -204,7 +230,7 @@ Current tests: `tests/Unit/ExampleTest`, `tests/Feature/ExampleTest`,
 `TeacherWorkflowTest` (4), `LeaderboardTest` (2), `AttendanceCorrectionTest` (10),
 `TenancyTest` (18 — cross-tenant isolation, middleware 403s, platform-admin tenant CRUD +
 add-admin + **delete-user (2026-10-08)**, public sign-up list).
-**Total: 49 passed, 174 assertions (2026-10-08).**
+**Total: 50 passed, 177 assertions (2026-10-09).**
 
 ## Docker Setup
 
@@ -327,21 +353,22 @@ reads the trait `@use` tag on the use-clause PHPDoc).
   soft-deletes the linked User.
 - `SubjectController` — `getAllSubjects`, `getSubject`, `getSubjectsByClass` (GET /subjects/class/{id} — all subjects of a class with class+teacher, used by the teacher timetable editor), `createSubject`, `updateSubject`, `deleteSubject`.
 - `DashboardController` — `getStats` (returns teacher/student/class/subject counts), `getFeed` (`GET /dashboard/feed` — role-scoped notices + tasks: admin = all announcements + all homework; teacher = announcements with `class_id` null or in the teacher's classIds (union of `teacher->classes()` ids and `teacher->subjects()` classIds, unique) + homework where `class_id` in classIds OR `assigned_by == teacher`; student = announcements null or own classId + homework of own classId. Announcements `created_at desc`, homeworks `due_date asc`, eager-loads class + poster + subject + teacher).
-- `AttendanceController` — `markAttendance` (bulk), `getAttendanceByClass`, `getStudentAttendance`, `updateAttendance`.
+- `AttendanceController` — `markAttendance` (bulk — preloads the day's existing rows for the submitted students in ONE query, then saves each via model so the tenant hook still stamps `tenant_id`; was `updateOrCreate` per student), `getAttendanceByClass`, `getStudentAttendance`, `updateAttendance`.
 - `HomeworkController` — `createHomework`, `getHomework`, `updateHomework`, `deleteHomework`, `getHomeworkByClass`, `getHomeworkByStudent`.
 - `ScoreController` — `addScore`, `getScore`, `getScoresByClass`, `getStudentScores`, `updateScore`, `deleteScore`. Eager-loads only safe columns (student password/user_id never exposed). Accepts `semester` (default field); duplicate (student_id, subject_id, exam_type, semester) → 409.
 - `LeaderboardController` — `getLeaderboardByClass` — ranks students in a class by overall average percentage (sum marks_obtained / sum total_marks), optional `?exam=` **and `?semester=`** (default `'current'`) filters, computed on the fly from scores (no new table). Returns `semester`. Class case fixed (`use App\Models\classes;`).
 - `AnnouncementController` — `createAnnouncement`, `getAnnouncements`, `getAnnouncementsByClass` (class + general), `getAnnouncement`, `updateAnnouncement`, `deleteAnnouncement`, `getAnnouncementsByStudent`. Routes ordered so `/announcements/class|student/{...}` precede `/announcements/{id}`. Eager-loads `class` + `poster` (user: id, name only).
-- `TimetableController` — `saveTimetable` (bulk upsert a class's full grid: deletes removed (day, period) slots then updateOrCreate each submitted slot; teacher_id auto-fills from the subject if omitted), `getTimetableByClass`, `getTimetableByTeacher` (entries where teacher_id matches), `updateTimetable`, `deleteTimetable`. `DAYS` const = Monday–Friday.
+- `TimetableController` — `saveTimetable` (bulk upsert a class's full grid: loads all existing slots once, batch-deletes removed `(day, period)` pairs in a single query, preloads the subject→teacher map in one query, then `save()`/`create()`s each submitted slot — model-based so the tenant hook still stamps `tenant_id`; teacher_id auto-fills from the subject if omitted), `getTimetableByClass`, `getTimetableByTeacher` (entries where teacher_id matches), `updateTimetable`, `deleteTimetable`. `DAYS` const = Monday–Friday.
 - `ConcernController` — `createConcern` (student raises; student_id resolved from the authenticated user's `user_id`, status forced `open`), `getConcerns` (all, newest first), `getConcernsByStudent`, `getConcern`, `updateConcern` (status + admin_reply; auto-sets `resolved_by` when resolving, clears it otherwise), `deleteConcern`. Students are scoped to their own concerns via `isStudentForbidden` (403 otherwise).
-- `ComparisonController` — `bySubject` (`GET /comparison/subject/{classId}/{subjectId}`, optional `?exam=&semester=`), `gaps` (per-subject gap to top-3 avg & class avg, sorted desc), `progress` (current vs latest other semester per subject + summary), `headToHead` (`GET /comparison/headtohead/{studentA}/{studentB}` — per-subject A% vs B%, delta, leader, wins summary; students must be one of the pair **and same class**, admin/teacher any two). Students can only access their own `gaps`/`progress` via `isStudentForbidden`; admin/teacher any student. Uses flat Eloquent `Collection<int, Score>` + `@param` docblocks for PHPStan.
+- `ComparisonController` — `bySubject` (`GET /comparison/subject/{classId}/{subjectId}`, optional `?exam=&semester=`), `gaps` (per-subject gap to top-3 avg & class avg, sorted desc), `progress` (current vs latest other semester per subject + summary), `headToHead` (`GET /comparison/headtohead/{studentA}/{studentB}` — per-subject A% vs B%, delta, leader, wins summary; students must be one of the pair **and same class**, admin/teacher any two). Students can only access their own `gaps`/`progress` via `isStudentForbidden`; admin/teacher any student. Uses flat Eloquent `Collection<int, Score>` + `@param` docblocks for PHPStan. **Queries batched 2026-10-09** — `gaps`/`progress`/`headToHead` previously ran `Subject::find` + 2–4 score queries per subject; now each preloads all needed subjects and score rows in a handful of queries (helpers `classPercentagesBySubject`/`studentPercentagesBySubject`/`rowsPercentage`), output verified byte-identical.
 - `TenantController` — platform-admin institution CRUD (`GET/POST /platform/tenants`,
   `PUT/DELETE /platform/tenants/{id}`): `index` (all tenants + users_count/admins_count/admins),
   `store` (creates tenant + its first `admin` user in a transaction), `update` (name/slug; slug
   validated with plain `Rule::unique` — matches the DB hard unique so a soft-deleted slug can't 500
   on reuse), `destroy` (soft delete only), `storeAdmin` (`POST /platform/tenants/{id}/admins` —
   adds a 2nd+ admin, email `Rule::unique` ignore-soft-deleted), **`destroyUser`
-  (`DELETE /platform/users/{id}` — soft-deletes any non-platform admin, revokes their tokens;
+  (`DELETE /platform/users/{id}` — **permanently** deletes any non-platform admin AND force-deletes
+  their linked Student/Teacher profile, revokes their tokens; frees the email for reuse;
   422: can't delete self, another platform admin, or a school's last admin)**. Access gated by
   `role:platform_admin`.
 - **`TenantExists` rule** (`app/Rules/TenantExists.php`) — wraps `Rule::exists()` with `where('tenant_id', context)` when a context is active. **Every `exists:` validation rule in ALL controllers now uses it** (29 usages across Announcement/Attendance/AttendanceCorrection/Classes/Homework/Score/Student/Subject/Timetable) — plain `exists:` runs on the query builder and would accept another school's ids.
@@ -365,8 +392,9 @@ reads the trait `@use` tag on the use-clause PHPDoc).
   - `terminate()` clears the context (no leak in long-lived workers).
 - **Platform group** (inside the protected group): `role:platform_admin` + `prefix('platform')` →
   `GET/POST /platform/tenants`, **`POST /platform/tenants/{id}/admins` (add a 2nd+ admin to an
-  institution, 2026-10-08)**, **`DELETE /platform/users/{id}` (delete ANY user — soft delete, revokes
-  Sanctum tokens; guards: no platform admins, no self, no last-admin-of-a-school, 2026-10-08)**,
+  institution, 2026-10-08)**, **`DELETE /platform/users/{id}` (delete ANY user — **permanent
+  force-delete of the user + their linked Student/Teacher profile**, revokes Sanctum tokens;
+  guards: no platform admins, no self, no last-admin-of-a-school; frees the email for reuse)**,
   `PUT/DELETE /platform/tenants/{id}`. No other route is reachable by
   a platform_admin (they have no tenant-scoped role group).
 - Rest under `auth:sanctum` with **role-based access control** via the `role` middleware alias
@@ -1686,3 +1714,137 @@ full-featured seeder to recover.
 - Seeder remains `updateOrCreate`-idempotent; attendance/homework dates are relative to "today"
   so they will refresh each day the seeder is re-run.
 - All still **uncommitted**.
+
+## Work Completed (2026-10-09, later) — Dashboard "Notices & Tasks" is now editable
+
+The dashboard feed section was read-only by design. It is now **role-adaptive and fully
+editable in place**, reusing the existing announcements + homework APIs (no backend changes).
+
+### Changed (client only)
+- **`client/src/components/NoticesTasks.tsx`** — rewritten. Reads role via `useAuth`:
+  - **admin (`management`)**: add/edit/delete notices (any audience) and tasks (any class/subject).
+  - **teacher**: same, but pickers are limited to their own classes/subjects and Edit/Delete on a
+    task only appears for tasks they assigned (`assigned_by === teacherId`, from `/teacher/me`).
+  - **student**: unchanged read-only view (no add/edit/delete controls).
+  - Inline expandable forms (notice: audience/title/description; task: class → subject cascade,
+    title, description, assigned/due dates); validation errors shown per field; `confirm()` on delete.
+- **`client/src/pages/management/Dashboard.tsx`** and **`client/src/pages/teacher/Dashboard.tsx`** —
+  added a `refreshFeed()` (`getDashboardFeed`) passed as the new `onChanged` prop so the feed
+  updates after any mutation. Student dashboard needs no change.
+
+### Visual restyle (2026-10-09, later)
+User reported the feed "is not looking well", then asked to make it "look more good". Restyled
+`NoticesTasks.tsx` (logic untouched) to match the dashboard design system: the two blocks are a
+responsive `xl:grid-cols-2` grid of `Card`-style sections built through a shared `Panel` helper —
+gradient icon badge (gold for notices, ink for tasks) + inset ring, gradient hairline accent across
+the top, title + tinted count pill, subtitle, and a header `Button`. Rows are `ListRow`-style bordered
+chips (`rounded-2xl border bg-surface shadow-card` with `hover:-translate-y-0.5 hover:shadow-card-hover`),
+notice rows show a poster avatar-initial + audience pill, task rows show an urgency-colored due-date
+chip (danger/warning/neutral) + `StatusBadge`, Edit/Delete reveal on hover (`focus-within` accessible).
+Forms are themed panels (gold/ink gradient) with subtitle + close button and right-aligned actions,
+plus dashed empty states. Also memoized `taskSubjectOptions` (`useMemo`). Reused `Button`/`StatusBadge`
+and existing tokens; inline `MegaphoneIcon`/`ClipboardIcon`/`PlusIcon`/`CloseIcon`/`CalendarIcon`. Client
+`npm.cmd run build` **PASS**.
+
+### Verification (2026-10-09)
+| Check | Result |
+|---|---|
+| `npm.cmd run build` (client, tsc -b + vite build) | **PASS** (754 modules) |
+| Live admin CRUD via `:8081` | login → announcement create/update/delete + homework create/update/delete + feed read → **PASS** (temp rows cleaned up) |
+| Live teacher flow via `:8081` | `/teacher/me` → `/teacher/{id}/subjects` (4) → homework create (owner stamp) + notice create + deletes → **PASS** |
+| Live client `:5175` / nginx `/up` | **200** |
+
+### Notes
+- Backend untouched, so no Pint/PHPStan/test re-run was required.
+- Still **uncommitted** (joined the existing uncommitted multi-tenancy/UI work).
+- Client has no lint/format/typecheck scripts; the build (tsc) is the type gate for `client/`.
+
+## Work Completed (2026-10-09, fix) — platform user-delete is now permanent
+
+**Reported:** "I can't use the IDs/emails I deleted — why aren't they deleted permanently, and why
+does it keep happening?"
+
+**Root cause:** `User`, `Student`, `Teacher` use Laravel soft deletes. The two delete paths were
+inconsistent:
+- Management (`StudentController::deleteStudent` / `TeacherController::deleteTeacher`) force-deletes
+  the linked **User**, and the `students.user_id`/`teachers.user_id` FKs are `ON DELETE CASCADE`, so
+  the academic row is physically removed → email reusable.
+- Platform (`TenantController::destroyUser`) only **soft-deleted the User** and left the linked
+  Student/Teacher row **active**. Re-adding the email then failed `Rule::unique('students','email')
+  ->whereNull('deleted_at')` with 422 "The email has already been taken", and the user row lingered
+  with `deleted_at` set forever → repeated on every delete.
+
+**Fix:** `TenantController::destroyUser` now, inside a `DB::transaction`:
+`$user->student()->withTrashed()->forceDelete(); $user->teacher()->withTrashed()->forceDelete();
+$user->tokens()->delete(); $user->forceDelete();` — i.e. the user and any linked profile are
+permanently removed, freeing the email and the numeric id. Guards unchanged (no platform admins,
+no self, no last admin of a school). All user-referencing FKs verified safe for hard delete:
+`students.user_id`/`teachers.user_id` CASCADE, `announcements.posted_by`/`attendance_corrections
+.handled_by`/`concerns.resolved_by` SET NULL; student/teacher cascades to attendances/scores/
+concerns/homeworks confirmed.
+
+**Tests:** updated `TenancyTest` delete test to expect the row gone (`withTrashed()->find()` null)
+and added "platform admin deleting a teacher purges the profile so the email can be reused".
+
+**Verification (2026-10-09):** Pint PASS · PHPStan `[OK] No errors` · tests **50 passed / 177
+assertions** · live `:8081`: create student → platform-delete user → both `users`/`students` rows
+= 0 → re-create same email OK. All still **uncommitted**.
+
+> Note: numeric MySQL AUTO_INCREMENT ids are never reused after deletes — that is normal DB
+> behaviour, not a bug. What was broken (and is now fixed) is email/login reuse.
+
+## Work Completed (2026-10-09, perf) — speed pass (N+1 / re-renders / unused deps)
+
+Triggered by "our project is working slow". Audited read-only first, then fixed the three flagged
+items. All still **uncommitted**.
+
+### (a) Backend — N+1 query batching (`classEase/app/Http/Controllers`)
+
+- **`ComparisonController`** — no classic lazy-load-in-`map()` bug anywhere; the real N+1s were
+  per-subject `find()`/query loops. Rewrote `gaps`, `progress`, `headToHead` to preload `Subject`s
+  (`whereIn()->keyBy`) and all needed `Score` rows once, compute percentages in memory via new
+  helpers `classPercentagesBySubject`/`studentPercentagesBySubject`/`rowsPercentage`; removed the
+  dead `with('student')` eager-load and obsolete `subjectComparison`/`studentSubjectPercentage`.
+  Output verified **byte-identical** to the pre-change responses for gaps/progress/headToHead across
+  two student pairs.
+- **`TimetableController::saveTimetable`** — now loads all existing slots for the scope once, deletes
+  removed `(day, period)` pairs with ONE `orWhere`-grouped `DELETE`, preloads the whole subject→teacher
+  map in ONE query, then `save()`/`create()`s each slot. Model-based writes so the `BelongsToTenant`
+  `creating`/`updating` hook still stamps `tenant_id` (an Eloquent `upsert()` would have bypassed it).
+- **`AttendanceController::markAttendance`** — preloads the day's existing rows for all submitted
+  students in ONE query (keyed by `student_id`, matching the old `updateOrCreate` key exactly), then
+  saves each via the model (tenant hook preserved). Was 1 SELECT + 1 write per student.
+
+### (b) Frontend — unnecessary re-renders (`client/src`)
+
+- **`context/AuthContext.tsx`** (P0): `login`/`register`/`logout` are now `useCallback`s and the
+  provider value is `useMemo`'d — previously every provider render created new function identities +
+  a fresh `value` literal, re-rendering every `useAuth()` consumer.
+- `layouts/DashboardLayout.tsx`: `openSidebar`/`closeSidebar` `useCallback`, `crumbs` + `today`
+  `useMemo` (date no longer recomputed each render).
+- `components/Sidebar.tsx`, all 6 dashboard chart leaves (`CategoryBars`, `GroupedBars`, `PassDonut`,
+  `Top5Bar`, `TrendChart`, `Sparkline`) and `charts/ChartCard.tsx` wrapped in `React.memo`.
+- `pages/management/Dashboard.tsx` + `pages/teacher/Dashboard.tsx`: `refreshFeed` wrapped in
+  `useCallback` (stable `onChanged` prop for `NoticesTasks`).
+
+### (c) Unused dependencies
+
+- Removed **`concurrently`** from `classEase/package.json` (`npm.cmd uninstall concurrently` → 17
+  packages pruned; 0 code/script references). `clsx` + `tailwind-merge` ARE used
+  (`resources/js/lib/utils.ts`); `prettier-plugin-tailwindcss` used via `.prettierrc`;
+  `eslint-import-resolver-typescript` used via `eslint.config.js` `import/resolver`.
+
+### Verification (2026-10-09, perf)
+
+| Check | Command | Result |
+|---|---|---|
+| PHP lint (Pint) | `docker exec phpverif vendor/bin/pint <changed files> --test` | PASS |
+| PHPStan (lvl 7) | `docker exec phpverif vendor/bin/phpstan analyse --no-progress` | `[OK] No errors` |
+| Tests | `docker exec -e APP_ENV=testing ... phpverif php artisan test` | **50 passed / 177 assertions** |
+| Client build | `npm.cmd run build` (from `client/`) | PASS (`tsc -b && vite build`) |
+| Live comparison diff | baseline vs after JSON for `subject/1/1`, `gaps/1`, `gaps/3`, `progress/1`, `progress/3`, `headtohead/1/2`, `headtohead/3/5` | **0 diffs** |
+| Live attendance (:8081) | mark 3 students date `2000-01-01` → verify → re-mark (update path) | PASS (temp rows deleted after) |
+| Live timetable (:8081) | round-trip save class 1's 25 slots → identical; null teacher auto-fills from subject (3) | PASS |
+
+Not changed (candidate future work): `DashboardController::getStats` still issues 4 `COUNT(*)` queries
+(low impact); client bundle is ~951 kB minified — route-level code-splitting would be the next win.

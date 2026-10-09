@@ -7,6 +7,7 @@ use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\Timetable;
 use App\Rules\TenantExists;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -54,41 +55,65 @@ class TimetableController extends Controller
             $existingQuery->where('day', $day);
         }
 
-        $existingKey = $existingQuery
-            ->get(['day', 'period'])
-            ->map(fn (Timetable $entry) => $entry->day.'|'.$entry->period)
-            ->all();
+        $existingEntries = $existingQuery
+            ->get()
+            ->keyBy(fn (Timetable $entry): string => $entry->day.'|'.$entry->period);
 
-        foreach (array_diff($existingKey, $submittedKey) as $key) {
-            [$existingDay, $period] = explode('|', $key, 2);
+        $keysToRemove = array_diff($existingEntries->keys()->all(), $submittedKey);
+
+        if ($keysToRemove !== []) {
+            $pairs = array_map(
+                static function (string $key): array {
+                    [$existingDay, $period] = explode('|', $key, 2);
+
+                    return ['day' => $existingDay, 'period' => $period];
+                },
+                $keysToRemove,
+            );
 
             Timetable::where('class_id', $classId)
-                ->where('day', $existingDay)
-                ->where('period', $period)
+                ->where(function (Builder $query) use ($pairs): void {
+                    foreach ($pairs as $pair) {
+                        $query->orWhere(function (Builder $inner) use ($pair): void {
+                            $inner->where('day', $pair['day'])->where('period', $pair['period']);
+                        });
+                    }
+                })
                 ->delete();
         }
+
+        $subjectTeacherMap = Subject::whereIn('id', array_values(array_filter(array_map(
+            static fn (array $slot): ?int => isset($slot['subject_id']) ? (int) $slot['subject_id'] : null,
+            $slots,
+        ))))->pluck('teacherId', 'id');
 
         foreach ($slots as $slot) {
             $subjectId = $slot['subject_id'] ?? null;
             $teacherId = $slot['teacher_id'] ?? null;
 
             if ($teacherId === null && $subjectId !== null) {
-                $teacherId = Subject::whereKey($subjectId)->first()?->teacherId;
+                $teacherId = $subjectTeacherMap->get((int) $subjectId);
             }
 
-            Timetable::updateOrCreate(
-                [
-                    'class_id' => $classId,
+            $key = $slot['day'].'|'.$slot['period'];
+            $entry = $existingEntries->get($key);
+
+            $attributes = [
+                'class_id' => $classId,
+                'subject_id' => $subjectId,
+                'teacher_id' => $teacherId,
+                'start_time' => $slot['start_time'] ?? null,
+                'end_time' => $slot['end_time'] ?? null,
+            ];
+
+            if ($entry instanceof Timetable) {
+                $entry->fill($attributes)->save();
+            } else {
+                Timetable::create(array_merge($attributes, [
                     'day' => $slot['day'],
                     'period' => $slot['period'],
-                ],
-                [
-                    'subject_id' => $subjectId,
-                    'teacher_id' => $teacherId,
-                    'start_time' => $slot['start_time'] ?? null,
-                    'end_time' => $slot['end_time'] ?? null,
-                ]
-            );
+                ]));
+            }
         }
 
         return response()->json([

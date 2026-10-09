@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Cell, Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
     ACCENT_SEQUENCE,
@@ -13,7 +14,7 @@ export interface Top5Row {
     value: number;
 }
 
-export default function Top5Bar({
+function Top5Bar({
     data,
     height = 180,
     unit = '',
@@ -77,3 +78,5 @@ export default function Top5Bar({
         </ResponsiveContainer>
     );
 }
+
+export default memo(Top5Bar);

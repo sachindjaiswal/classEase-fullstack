@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AXIS_TICK, CHART_COLORS, CURSOR_BAR, GRID_STROKE } from '@/components/charts/palette';
 import ChartTooltip from '@/components/charts/ChartTooltip';
@@ -7,7 +8,7 @@ export interface SeriesDef {
     color: string;
 }
 
-export default function GroupedBars({
+function GroupedBars({
     data,
     series,
     height = 240,
@@ -81,3 +82,5 @@ export default function GroupedBars({
         </div>
     );
 }
+
+export default memo(GroupedBars);

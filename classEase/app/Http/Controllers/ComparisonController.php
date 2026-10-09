@@ -105,16 +105,25 @@ class ComparisonController extends Controller
             ->map(fn ($id): int => (int) $id)
             ->all();
 
+        $subjects = Subject::whereIn('id', $subjectIds)->get()->keyBy('id');
+
+        $classPercentages = $this->classPercentagesBySubject((int) $student->classId, $subjectIds, $semester);
+        $myPercentages = $this->studentPercentagesBySubject($studentId, $subjectIds, $semester);
+
         $gaps = [];
 
         foreach ($subjectIds as $subjectId) {
-            $subject = Subject::find($subjectId);
+            $subject = $subjects->get($subjectId);
 
             if (! $subject) {
                 continue;
             }
 
-            [$myPercentage, $top3Average, $classAverage] = $this->subjectComparison($student, $subjectId, $semester);
+            $myPercentage = $myPercentages->get($subjectId, 0.0);
+            $sorted = $classPercentages->get($subjectId, collect());
+
+            $top3Average = round((float) $sorted->take(3)->average(), 2);
+            $classAverage = round((float) $sorted->average(), 2);
 
             $gaps[] = [
                 'subject' => ['id' => $subject->id, 'subjectName' => $subject->subjectName],
@@ -153,22 +162,28 @@ class ComparisonController extends Controller
             ->map(fn ($id): int => (int) $id)
             ->all();
 
+        $subjects = Subject::whereIn('id', $subjectIds)->get()->keyBy('id');
+
+        $scoresBySubject = Score::where('student_id', $studentId)
+            ->whereIn('subject_id', $subjectIds)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get(['subject_id', 'semester', 'marks_obtained', 'total_marks', 'created_at'])
+            ->groupBy('subject_id');
+
         $progress = [];
 
         foreach ($subjectIds as $subjectId) {
-            $subject = Subject::find($subjectId);
+            $subject = $subjects->get($subjectId);
 
             if (! $subject) {
                 continue;
             }
 
-            $scores = Score::where('student_id', $studentId)
-                ->where('subject_id', $subjectId)
-                ->orderBy('created_at')
-                ->get(['semester', 'marks_obtained', 'total_marks', 'created_at']);
+            $scores = $scoresBySubject->get($subjectId, collect());
 
             $current = $this->collectionSemesterPercentage($scores, 'current');
-            $previousSemester = $this->previousSemester($studentId, $subjectId);
+            $previousSemester = $this->latestNonCurrentSemester($scores);
             $previous = $previousSemester !== null ? $this->collectionSemesterPercentage($scores, $previousSemester) : null;
 
             if ($current === null && $previous === null) {
@@ -245,17 +260,28 @@ class ComparisonController extends Controller
 
         $subjectIds = array_values(array_unique(array_merge($aSubjectIds, $bSubjectIds)));
 
+        $subjects = Subject::whereIn('id', $subjectIds)->get()->keyBy('id');
+
+        $percentages = Score::whereIn('student_id', [$studentAId, $studentBId])
+            ->where('semester', $semester)
+            ->whereIn('subject_id', $subjectIds)
+            ->get(['student_id', 'subject_id', 'marks_obtained', 'total_marks'])
+            ->groupBy('student_id')
+            ->map(fn (Collection $rows): Collection => $rows
+                ->groupBy('subject_id')
+                ->map(fn (Collection $subjectScores): float => $this->rowsPercentage($subjectScores)));
+
         $results = [];
 
         foreach ($subjectIds as $subjectId) {
-            $subject = Subject::find($subjectId);
+            $subject = $subjects->get($subjectId);
 
             if (! $subject) {
                 continue;
             }
 
-            $aPercentage = $this->studentSubjectPercentage($studentAId, $subjectId, $semester);
-            $bPercentage = $this->studentSubjectPercentage($studentBId, $subjectId, $semester);
+            $aPercentage = $percentages->get($studentAId, collect())->get($subjectId);
+            $bPercentage = $percentages->get($studentBId, collect())->get($subjectId);
 
             if ($aPercentage === null && $bPercentage === null) {
                 continue;
@@ -301,58 +327,47 @@ class ComparisonController extends Controller
         ], 200);
     }
 
-    private function studentSubjectPercentage(int $studentId, int $subjectId, string $semester): ?float
+    /**
+     * @param  array<int, int>  $subjectIds
+     * @return Collection<int, Collection<int, float>>
+     */
+    private function classPercentagesBySubject(int $classId, array $subjectIds, string $semester): Collection
     {
-        $scores = Score::where('student_id', $studentId)
-            ->where('subject_id', $subjectId)
+        return Score::where('class_id', $classId)
+            ->whereIn('subject_id', $subjectIds)
             ->where('semester', $semester)
-            ->get(['marks_obtained', 'total_marks']);
-
-        if ($scores->isEmpty()) {
-            return null;
-        }
-
-        $obtained = (int) $scores->sum('marks_obtained');
-        $max = (int) $scores->sum('total_marks');
-
-        return $max > 0 ? round(($obtained / $max) * 100, 2) : 0.0;
+            ->get(['subject_id', 'student_id', 'marks_obtained', 'total_marks'])
+            ->groupBy('subject_id')
+            ->map(fn (Collection $rows): Collection => $rows
+                ->groupBy('student_id')
+                ->map(fn (Collection $studentScores): float => $this->rowsPercentage($studentScores))
+                ->sortDesc()
+                ->values());
     }
 
     /**
-     * @return list<float>
+     * @param  array<int, int>  $subjectIds
+     * @return Collection<int, float>
      */
-    private function subjectComparison(Student $student, int $subjectId, string $semester): array
+    private function studentPercentagesBySubject(int $studentId, array $subjectIds, string $semester): Collection
     {
-        $scores = Score::where('class_id', $student->classId)
-            ->where('subject_id', $subjectId)
+        return Score::where('student_id', $studentId)
+            ->whereIn('subject_id', $subjectIds)
             ->where('semester', $semester)
-            ->with('student:id,firstName,middleName,surname')
-            ->get(['id', 'student_id', 'marks_obtained', 'total_marks']);
+            ->get(['subject_id', 'marks_obtained', 'total_marks'])
+            ->groupBy('subject_id')
+            ->map(fn (Collection $rows): float => $this->rowsPercentage($rows));
+    }
 
-        $percentages = $scores
-            ->groupBy('student_id')
-            ->map(function (Collection $studentScores): float {
-                $obtained = (int) $studentScores->sum('marks_obtained');
-                $max = (int) $studentScores->sum('total_marks');
+    /**
+     * @param  Collection<int, Score>  $rows
+     */
+    private function rowsPercentage(Collection $rows): float
+    {
+        $obtained = (int) $rows->sum('marks_obtained');
+        $max = (int) $rows->sum('total_marks');
 
-                return $max > 0 ? round(($obtained / $max) * 100, 2) : 0.0;
-            });
-
-        $sorted = $percentages->sortDesc()->values();
-
-        $myScores = Score::where('student_id', $student->id)
-            ->where('subject_id', $subjectId)
-            ->where('semester', $semester)
-            ->get(['marks_obtained', 'total_marks']);
-
-        $myObtained = (int) $myScores->sum('marks_obtained');
-        $myMax = (int) $myScores->sum('total_marks');
-        $myPercentage = $myMax > 0 ? round(($myObtained / $myMax) * 100, 2) : 0.0;
-
-        $top3Average = round((float) $sorted->take(3)->average(), 2);
-        $classAverage = round((float) $percentages->average(), 2);
-
-        return [$myPercentage, $top3Average, $classAverage];
+        return $max > 0 ? round(($obtained / $max) * 100, 2) : 0.0;
     }
 
     /**
@@ -372,14 +387,12 @@ class ComparisonController extends Controller
         return $max > 0 ? round(($obtained / $max) * 100, 2) : 0.0;
     }
 
-    private function previousSemester(int $studentId, int $subjectId): ?string
+    /**
+     * @param  Collection<int, Score>  $scores
+     */
+    private function latestNonCurrentSemester(Collection $scores): ?string
     {
-        $latest = Score::where('student_id', $studentId)
-            ->where('subject_id', $subjectId)
-            ->where('semester', '!=', 'current')
-            ->orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc')
-            ->first(['semester']);
+        $latest = $scores->where('semester', '!=', 'current')->last();
 
         $semester = $latest?->semester;
 

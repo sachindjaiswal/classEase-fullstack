@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { getTeacher, getTeacherMe, getTeacherSubjects } from '@/api/teachers';
@@ -96,6 +96,15 @@ export default function TeacherDashboard() {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, today]);
+
+    const refreshFeed = useCallback(() => {
+        getDashboardFeed()
+            .then((res) => {
+                setAnnouncements(res.data.announcements);
+                setHomeworks(res.data.homeworks);
+            })
+            .catch(() => {});
+    }, []);
 
     const subjectAverages = useMemo(() => {
         const map: Record<number, { name: string; percent: number; count: number }> = {};
@@ -510,7 +519,11 @@ export default function TeacherDashboard() {
                         </Card>
                     </div>
 
-                    <NoticesTasks announcements={announcements} homeworks={homeworks} />
+                    <NoticesTasks
+                        announcements={announcements}
+                        homeworks={homeworks}
+                        onChanged={refreshFeed}
+                    />
                 </>
             )}
         </div>

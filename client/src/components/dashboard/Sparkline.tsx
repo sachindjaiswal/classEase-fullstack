@@ -1,8 +1,8 @@
-import { useId } from 'react';
+import { memo, useId } from 'react';
 import { Area, AreaChart, ResponsiveContainer, YAxis } from 'recharts';
 import { TEAL_GRADIENT } from '@/components/charts/palette';
 
-export default function Sparkline({
+function Sparkline({
     data,
     dataKey = 'value',
     height = 56,
@@ -58,3 +58,5 @@ export default function Sparkline({
         </ResponsiveContainer>
     );
 }
+
+export default memo(Sparkline);
